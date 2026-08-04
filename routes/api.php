@@ -1,0 +1,11 @@
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+Route::middleware('auth:sanctum')->get('/user', fn (Request $request) => $request->user());
+
+// Payment callbacks must be rate-limited, logged, idempotent, and cryptographically verified.
+Route::post('/payments/mpesa/callback', function (Request $request) {
+    return response()->json(['received' => true]);
+})->name('payments.mpesa.callback');
