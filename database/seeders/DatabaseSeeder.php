@@ -15,5 +15,9 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Starter School', 'slug' => 'starter-school', 'audience' => 'school', 'billing_period' => 'annual', 'price_minor' => 5000000, 'currency' => 'KES', 'user_limit' => 100, 'features' => json_encode(['core_library', 'assignments', 'basic_reports']), 'is_active' => true],
             ['name' => 'Standard School', 'slug' => 'standard-school', 'audience' => 'school', 'billing_period' => 'annual', 'price_minor' => 12000000, 'currency' => 'KES', 'user_limit' => 500, 'features' => json_encode(['full_library', 'assignments', 'quizzes', 'reports']), 'is_active' => true],
         ], ['slug'], ['name', 'price_minor', 'features', 'is_active']);
+
+        $this->call([
+    RolePermissionSeeder::class,
+]);
     }
 }

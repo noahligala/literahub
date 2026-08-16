@@ -16,5 +16,8 @@
   "version": "0.1.0",
   "description": "Subscription-based digital literature platform for schools, universities and individual learners.",
   "author": "Ligco Technologies",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "allowScripts": {
+    "esbuild@0.28.1": true
+  }
 }

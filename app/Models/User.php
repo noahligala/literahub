@@ -14,10 +14,19 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'phone', 'password', 'status',
+        'name',
+        'email',
+        'phone',
+        'password',
+        'status',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = [
+        'password',
+        'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+    ];
 
     protected function casts(): array
     {
@@ -30,7 +39,10 @@ class User extends Authenticatable
     public function schools(): BelongsToMany
     {
         return $this->belongsToMany(School::class)
-            ->withPivot(['role', 'status'])
+            ->withPivot([
+                'role',
+                'status',
+            ])
             ->withTimestamps();
     }
 }
