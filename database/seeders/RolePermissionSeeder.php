@@ -27,21 +27,59 @@ class RolePermissionSeeder extends Seeder
         foreach ($permissions as $permission) {
             Permission::firstOrCreate([
                 'name' => $permission,
+                'guard_name' => 'web',
             ]);
         }
 
-        $superAdmin = Role::firstOrCreate(['name' => 'super_admin']);
-        $platformAdmin = Role::firstOrCreate(['name' => 'platform_admin']);
-        $contentManager = Role::firstOrCreate(['name' => 'content_manager']);
-        $author = Role::firstOrCreate(['name' => 'author']);
-        $schoolAdmin = Role::firstOrCreate(['name' => 'school_admin']);
-        $teacher = Role::firstOrCreate(['name' => 'teacher']);
-        $student = Role::firstOrCreate(['name' => 'student']);
+        $superAdmin = Role::firstOrCreate([
+            'name' => 'super_admin',
+            'guard_name' => 'web',
+        ]);
+
+        $platformAdmin = Role::firstOrCreate([
+            'name' => 'platform_admin',
+            'guard_name' => 'web',
+        ]);
+
+        $contentManager = Role::firstOrCreate([
+            'name' => 'content_manager',
+            'guard_name' => 'web',
+        ]);
+
+        $author = Role::firstOrCreate([
+            'name' => 'author',
+            'guard_name' => 'web',
+        ]);
+
+        $schoolAdmin = Role::firstOrCreate([
+            'name' => 'school_admin',
+            'guard_name' => 'web',
+        ]);
+
+        $teacher = Role::firstOrCreate([
+            'name' => 'teacher',
+            'guard_name' => 'web',
+        ]);
+
+        $student = Role::firstOrCreate([
+            'name' => 'student',
+            'guard_name' => 'web',
+        ]);
+
         $individualSubscriber = Role::firstOrCreate([
             'name' => 'individual_subscriber',
+            'guard_name' => 'web',
         ]);
-        $finance = Role::firstOrCreate(['name' => 'finance']);
-        $support = Role::firstOrCreate(['name' => 'support']);
+
+        $finance = Role::firstOrCreate([
+            'name' => 'finance',
+            'guard_name' => 'web',
+        ]);
+
+        $support = Role::firstOrCreate([
+            'name' => 'support',
+            'guard_name' => 'web',
+        ]);
 
         $superAdmin->syncPermissions(Permission::all());
 

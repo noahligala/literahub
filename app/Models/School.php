@@ -12,19 +12,58 @@ class School extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'slug', 'registration_number', 'type', 'county', 'town',
-        'email', 'phone', 'status', 'student_limit',
+        'name',
+        'slug',
+        'registration_number',
+        'type',
+        'county',
+        'town',
+        'email',
+        'phone',
+        'status',
+        'student_limit',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'student_limit' => 'integer',
+        ];
+    }
 
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)
-            ->withPivot(['role', 'status'])
+            ->withPivot([
+                'role',
+                'status',
+            ])
             ->withTimestamps();
     }
 
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
+    }
+
+    public function administrators(): BelongsToMany
+    {
+        return $this->users()
+            ->wherePivot('role', 'school_admin')
+            ->wherePivot('status', 'active');
+    }
+
+    public function teachers(): BelongsToMany
+    {
+        return $this->users()
+            ->wherePivot('role', 'teacher')
+            ->wherePivot('status', 'active');
+    }
+
+    public function students(): BelongsToMany
+    {
+        return $this->users()
+            ->wherePivot('role', 'student')
+            ->wherePivot('status', 'active');
     }
 }
