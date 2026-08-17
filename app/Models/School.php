@@ -99,6 +99,29 @@ class School extends Model
         );
     }
 
+    public function readerSessions(): HasMany
+    {
+        return $this->hasMany(
+            ReaderSession::class
+        );
+    }
+
+
+    public function readingActivities(): HasMany
+    {
+        return $this->hasMany(
+            ReadingActivity::class
+        );
+    }
+
+
+    public function securityEvents(): HasMany
+    {
+        return $this->hasMany(
+            SecurityEvent::class
+        );
+    }
+
     // public function licensedBooks()
     // {
     //     return Book::query()

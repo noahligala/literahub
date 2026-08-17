@@ -44,6 +44,17 @@ class Book extends Model
         'max_concurrent_loans',
 
         'rights_statement',
+
+        'storage_uuid',
+        'original_pdf_path',
+        'processing_status',
+        'processed_page_count',
+        'render_version',
+        'processing_started_at',
+        'processing_completed_at',
+        'processing_failed_at',
+        'processing_error',
+        'source_checksum',
     ];
 
     protected function casts(): array
@@ -84,7 +95,12 @@ class Book extends Model
 
             'max_concurrent_loans' =>
                 'integer',
-        ];
+                'processed_page_count' => 'integer',
+                'render_version' => 'integer',
+                'processing_started_at' => 'datetime',
+                'processing_completed_at' => 'datetime',
+                'processing_failed_at' => 'datetime',
+                        ];
     }
 
     /*
@@ -271,4 +287,57 @@ class Book extends Model
     {
         return $this->allow_student_borrowing;
     }
+
+    public function pages(): HasMany
+{
+    return $this->hasMany(
+        BookPage::class
+    )->orderBy(
+        'page_number'
+    );
+}
+
+
+public function readerSessions(): HasMany
+{
+    return $this->hasMany(
+        ReaderSession::class
+    );
+}
+
+
+public function readingActivities(): HasMany
+{
+    return $this->hasMany(
+        ReadingActivity::class
+    );
+}
+
+
+public function securityEvents(): HasMany
+{
+    return $this->hasMany(
+        SecurityEvent::class
+    );
+}
+
+// public function isProcessed(): bool
+// {
+//     return $this->processing_status === 'processed'
+//         &&
+//         $this->processed_page_count > 0;
+// }
+
+
+// public function isProcessing(): bool
+// {
+//     return $this->processing_status === 'processing';
+// }
+
+
+// public function hasProcessingFailed(): bool
+// {
+//     return $this->processing_status === 'failed';
+// }
+
 }

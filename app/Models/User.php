@@ -109,55 +109,85 @@ class User extends Authenticatable
     }
 
     public function authorProfile(): HasOne
-{
-    return $this->hasOne(
-        Author::class
-    );
-}
+    {
+        return $this->hasOne(
+            Author::class
+        );
+    }
 
-public function uploadedBooks(): HasMany
-{
-    return $this->hasMany(
-        Book::class,
-        'uploaded_by'
-    );
-}
+    public function uploadedBooks(): HasMany
+    {
+        return $this->hasMany(
+            Book::class,
+            'uploaded_by'
+        );
+    }
 
-public function bookBorrowings(): HasMany
-{
-    return $this->hasMany(
-        BookBorrowing::class
-    );
-}
+    public function bookBorrowings(): HasMany
+    {
+        return $this->hasMany(
+            BookBorrowing::class
+        );
+    }
 
-public function bookBookmarks(): HasMany
-{
-    return $this->hasMany(
-        BookBookmark::class
-    );
-}
+    public function bookBookmarks(): HasMany
+    {
+        return $this->hasMany(
+            BookBookmark::class
+        );
+    }
 
-public function bookAccessRequests(): HasMany
-{
-    return $this->hasMany(
-        BookAccessRequest::class,
-        'student_id'
-    );
-}
+    public function bookAccessRequests(): HasMany
+    {
+        return $this->hasMany(
+            BookAccessRequest::class,
+            'student_id'
+        );
+    }
 
-public function bookAccessRequestsToReview(): HasMany
-{
-    return $this->hasMany(
-        BookAccessRequest::class,
-        'teacher_id'
-    );
-}
+    public function bookAccessRequestsToReview(): HasMany
+    {
+        return $this->hasMany(
+            BookAccessRequest::class,
+            'teacher_id'
+        );
+    }
 
-public function reviewedBooks(): HasMany
-{
-    return $this->hasMany(
-        Book::class,
-        'reviewed_by'
-    );
-}
+    public function reviewedBooks(): HasMany
+    {
+        return $this->hasMany(
+            Book::class,
+            'reviewed_by'
+        );
+    }
+    public function registeredDevices(): HasMany
+    {
+        return $this->hasMany(
+            RegisteredDevice::class
+        );
+    }
+
+
+    public function readerSessions(): HasMany
+    {
+        return $this->hasMany(
+            ReaderSession::class
+        );
+    }
+
+
+    public function readingActivities(): HasMany
+    {
+        return $this->hasMany(
+            ReadingActivity::class
+        );
+    }
+
+
+    public function securityEvents(): HasMany
+    {
+        return $this->hasMany(
+            SecurityEvent::class
+        );
+    }
 }
