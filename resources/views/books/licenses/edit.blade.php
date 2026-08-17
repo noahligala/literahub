@@ -5,23 +5,27 @@
         <div class="page-header">
 
             <div>
+
                 <span class="eyebrow">
-                    Creators
+                    Distribution
                 </span>
 
                 <h1>
-                    Add Author
+                    Edit Licence
                 </h1>
 
                 <p>
-                    Create an author profile and associate the creator
-                    with an approved publishing organisation where applicable.
+                    {{ $license->license_number }}
                 </p>
+
             </div>
 
 
             <a
-                href="{{ route('authors.index') }}"
+                href="{{ route(
+                    'book-licenses.show',
+                    $license
+                ) }}"
                 class="btn btn--secondary"
             >
                 Cancel
@@ -35,13 +39,19 @@
             <div class="alert alert-error">
 
                 <strong>
-                    The author could not be saved.
+                    Please correct the licence details.
                 </strong>
 
                 <ul>
+
                     @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
+
+                        <li>
+                            {{ $error }}
+                        </li>
+
                     @endforeach
+
                 </ul>
 
             </div>
@@ -51,14 +61,22 @@
 
         <form
             method="POST"
-            action="{{ route('authors.store') }}"
-            enctype="multipart/form-data"
+            action="{{ route(
+                'book-licenses.update',
+                $license
+            ) }}"
         >
 
             @csrf
+            @method('PUT')
 
-            <x-forms.author
+
+            <x-forms.book-license
+                :license="$license"
+                :schools="$schools"
+                :books="$books"
                 :publishers="$publishers"
+                :authors="$authors"
             />
 
         </form>

@@ -10,14 +10,14 @@
                 </span>
 
                 <h1>
-                    Borrowed Books
+                    User Details
                 </h1>
             </div>
 
         </div>
 
         <div class="card">
-            <p>Current digital loans.</p>
+            <p>User roles, schools and account information.</p>
         </div>
 
     </div>

@@ -19,5 +19,8 @@
   "license": "UNLICENSED",
   "allowScripts": {
     "esbuild@0.28.1": true
+  },
+  "dependencies": {
+    "pdfjs-dist": "^6.2.108"
   }
 }

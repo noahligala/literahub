@@ -14,20 +14,40 @@ use Illuminate\View\View;
 
 class AuthorController extends Controller
 {
-    public function index(Request $request): View
-    {
+    /**
+     * Display a listing of authors.
+     */
+    public function index(
+        Request $request
+    ): View {
         Gate::authorize(
             'viewAny',
             Author::class
         );
 
         $search = trim(
-            (string) $request->query('search', '')
+            (string) $request->query(
+                'search',
+                ''
+            )
+        );
+
+        $status = trim(
+            (string) $request->query(
+                'status',
+                ''
+            )
         );
 
         $authors = Author::query()
-            ->with('publisher')
-            ->withCount('books')
+            ->with([
+                'publisher',
+                'user',
+            ])
+            ->withCount([
+                'books',
+                'schoolBookLicenses',
+            ])
             ->when(
                 $search !== '',
                 function ($query) use ($search) {
@@ -47,10 +67,35 @@ class AuthorController extends Controller
                                             'like',
                                             "%{$search}%"
                                         )
+                                )
+                                ->orWhereHas(
+                                    'user',
+                                    fn ($query) =>
+                                        $query->where(
+                                            'email',
+                                            'like',
+                                            "%{$search}%"
+                                        )
                                 );
                         }
                     );
                 }
+            )
+            ->when(
+                in_array(
+                    $status,
+                    [
+                        'pending',
+                        'verified',
+                        'suspended',
+                    ],
+                    true
+                ),
+                fn ($query) =>
+                    $query->where(
+                        'status',
+                        $status
+                    )
             )
             ->orderBy('name')
             ->paginate(20)
@@ -62,6 +107,10 @@ class AuthorController extends Controller
         );
     }
 
+
+    /**
+     * Show the form for creating an author.
+     */
     public function create(): View
     {
         Gate::authorize(
@@ -69,11 +118,13 @@ class AuthorController extends Controller
             Author::class
         );
 
-        $publishers =
-            Publisher::query()
-                ->where('status', 'active')
-                ->orderBy('name')
-                ->get();
+        $publishers = Publisher::query()
+            ->where(
+                'status',
+                'active'
+            )
+            ->orderBy('name')
+            ->get();
 
         return view(
             'authors.create',
@@ -81,6 +132,10 @@ class AuthorController extends Controller
         );
     }
 
+
+    /**
+     * Store a newly created author.
+     */
     public function store(
         Request $request
     ): RedirectResponse {
@@ -99,7 +154,9 @@ class AuthorController extends Controller
                 $validated['name']
             );
 
-        if ($request->hasFile('photo')) {
+        if (
+            $request->hasFile('photo')
+        ) {
             $validated['photo_path'] =
                 $request
                     ->file('photo')
@@ -109,11 +166,14 @@ class AuthorController extends Controller
                     );
         }
 
-        unset($validated['photo']);
-
-        $author = Author::create(
-            $validated
+        unset(
+            $validated['photo']
         );
+
+        $author = Author::query()
+            ->create(
+                $validated
+            );
 
         return redirect()
             ->route(
@@ -121,11 +181,15 @@ class AuthorController extends Controller
                 $author
             )
             ->with(
-                'success',
+                'status',
                 'Author created successfully.'
             );
     }
 
+
+    /**
+     * Display the specified author.
+     */
     public function show(
         Author $author
     ): View {
@@ -135,8 +199,22 @@ class AuthorController extends Controller
         );
 
         $author->load([
+            'user',
+
             'publisher',
-            'books.publisher',
+
+            'books' => fn ($query) =>
+                $query
+                    ->with('publisher')
+                    ->latest(),
+
+            'schoolBookLicenses' => fn ($query) =>
+                $query
+                    ->with([
+                        'school',
+                        'book',
+                    ])
+                    ->latest(),
         ]);
 
         return view(
@@ -145,6 +223,10 @@ class AuthorController extends Controller
         );
     }
 
+
+    /**
+     * Show the form for editing an author.
+     */
     public function edit(
         Author $author
     ): View {
@@ -153,11 +235,13 @@ class AuthorController extends Controller
             $author
         );
 
-        $publishers =
-            Publisher::query()
-                ->where('status', 'active')
-                ->orderBy('name')
-                ->get();
+        $publishers = Publisher::query()
+            ->where(
+                'status',
+                'active'
+            )
+            ->orderBy('name')
+            ->get();
 
         return view(
             'authors.edit',
@@ -168,6 +252,10 @@ class AuthorController extends Controller
         );
     }
 
+
+    /**
+     * Update the specified author.
+     */
     public function update(
         Request $request,
         Author $author
@@ -183,6 +271,13 @@ class AuthorController extends Controller
                 $author
             );
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Slug
+        |--------------------------------------------------------------------------
+        */
+
         if (
             $validated['name']
             !== $author->name
@@ -194,8 +289,30 @@ class AuthorController extends Controller
                 );
         }
 
-        if ($request->hasFile('photo')) {
-            if ($author->photo_path) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Photo Replacement
+        |--------------------------------------------------------------------------
+        |
+        | Store the replacement first, then delete the old image.
+        |
+        */
+
+        if (
+            $request->hasFile('photo')
+        ) {
+            $newPhoto =
+                $request
+                    ->file('photo')
+                    ->store(
+                        'library/authors',
+                        'public'
+                    );
+
+            if (
+                $author->photo_path
+            ) {
                 Storage::disk('public')
                     ->delete(
                         $author->photo_path
@@ -203,15 +320,12 @@ class AuthorController extends Controller
             }
 
             $validated['photo_path'] =
-                $request
-                    ->file('photo')
-                    ->store(
-                        'library/authors',
-                        'public'
-                    );
+                $newPhoto;
         }
 
-        unset($validated['photo']);
+        unset(
+            $validated['photo']
+        );
 
         $author->update(
             $validated
@@ -223,11 +337,15 @@ class AuthorController extends Controller
                 $author
             )
             ->with(
-                'success',
+                'status',
                 'Author updated successfully.'
             );
     }
 
+
+    /**
+     * Remove the specified author.
+     */
     public function destroy(
         Author $author
     ): RedirectResponse {
@@ -236,7 +354,54 @@ class AuthorController extends Controller
             $author
         );
 
-        if ($author->photo_path) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Integrity Guard
+        |--------------------------------------------------------------------------
+        |
+        | Catalogue history should not disappear simply because an author
+        | profile is being removed.
+        |
+        */
+
+        if (
+            $author
+                ->books()
+                ->exists()
+        ) {
+            return redirect()
+                ->route(
+                    'authors.show',
+                    $author
+                )
+                ->withErrors([
+                    'author' =>
+                        'This author cannot be deleted because catalogue books are associated with the profile.',
+                ]);
+        }
+
+
+        if (
+            $author
+                ->schoolBookLicenses()
+                ->exists()
+        ) {
+            return redirect()
+                ->route(
+                    'authors.show',
+                    $author
+                )
+                ->withErrors([
+                    'author' =>
+                        'This author cannot be deleted because licence records are associated with the profile.',
+                ]);
+        }
+
+
+        if (
+            $author->photo_path
+        ) {
             Storage::disk('public')
                 ->delete(
                     $author->photo_path
@@ -246,13 +411,19 @@ class AuthorController extends Controller
         $author->delete();
 
         return redirect()
-            ->route('authors.index')
+            ->route(
+                'authors.index'
+            )
             ->with(
-                'success',
+                'status',
                 'Author deleted successfully.'
             );
     }
 
+
+    /**
+     * Validate author input.
+     */
     private function validateAuthor(
         Request $request,
         ?Author $author = null
@@ -273,6 +444,12 @@ class AuthorController extends Controller
                 Rule::exists(
                     'publishers',
                     'id'
+                )->where(
+                    fn ($query) =>
+                        $query->where(
+                            'status',
+                            'active'
+                        )
                 ),
             ],
 
@@ -291,6 +468,7 @@ class AuthorController extends Controller
             'photo' => [
                 'nullable',
                 'image',
+                'mimes:jpg,jpeg,png,webp',
                 'max:4096',
             ],
 
@@ -306,6 +484,10 @@ class AuthorController extends Controller
         ]);
     }
 
+
+    /**
+     * Generate a unique author slug.
+     */
     private function uniqueSlug(
         string $name,
         ?int $ignoreId = null
@@ -315,11 +497,14 @@ class AuthorController extends Controller
             ?: 'author';
 
         $slug = $base;
-        $counter = 1;
+        $counter = 2;
 
         while (
             Author::query()
-                ->where('slug', $slug)
+                ->where(
+                    'slug',
+                    $slug
+                )
                 ->when(
                     $ignoreId,
                     fn ($query) =>
@@ -332,7 +517,11 @@ class AuthorController extends Controller
                 ->exists()
         ) {
             $slug =
-                $base . '-' . $counter++;
+                $base
+                . '-'
+                . $counter;
+
+            $counter++;
         }
 
         return $slug;
