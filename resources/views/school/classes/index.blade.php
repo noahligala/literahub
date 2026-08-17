@@ -461,7 +461,7 @@
 
             <div class="table-wrapper">
 
-                <table>
+                <table class="table-condensed">
 
                     <thead>
 
@@ -482,13 +482,47 @@
 
                             <tr>
 
+                                {{-- Stream --}}
                                 <td>
-                                    <strong>
-                                        {{ $stream->name }}
-                                    </strong>
+
+                                    <div class="directory-person">
+
+                                        <span
+                                            class="directory-avatar"
+                                            aria-hidden="true"
+                                        >
+                                            {{ strtoupper(
+                                                substr(
+                                                    $stream->name,
+                                                    0,
+                                                    1
+                                                )
+                                            ) }}
+                                        </span>
+
+
+                                        <div class="directory-person__details">
+
+                                            <div class="directory-person__name">
+
+                                                <strong>
+                                                    {{ $stream->name }}
+                                                </strong>
+
+                                            </div>
+
+                                            <div class="directory-person__meta">
+                                                Stream
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
                                 </td>
 
 
+                                {{-- Class --}}
                                 <td>
 
                                     <a
@@ -496,28 +530,48 @@
                                             'school.classes.show',
                                             $stream->schoolClass
                                         ) }}"
+                                        class="table-link"
                                     >
-                                        {{ $stream
-                                            ->schoolClass
-                                            ->name
-                                        }}
+                                        {{ $stream->schoolClass->name }}
                                     </a>
 
                                 </td>
 
 
+                                {{-- Class Teacher --}}
                                 <td>
 
                                     @if($stream->teacher)
 
-                                        <a
-                                            href="{{ route(
-                                                'school.teachers.show',
-                                                $stream->teacher
-                                            ) }}"
-                                        >
-                                            {{ $stream->teacher->name }}
-                                        </a>
+                                        <div class="directory-person directory-person--small">
+
+                                            <span
+                                                class="directory-avatar directory-avatar--small"
+                                            >
+                                                {{ strtoupper(
+                                                    substr(
+                                                        $stream->teacher->name,
+                                                        0,
+                                                        1
+                                                    )
+                                                ) }}
+                                            </span>
+
+                                            <div class="directory-person__details">
+
+                                                <a
+                                                    href="{{ route(
+                                                        'school.teachers.show',
+                                                        $stream->teacher
+                                                    ) }}"
+                                                    class="table-link"
+                                                >
+                                                    {{ $stream->teacher->name }}
+                                                </a>
+
+                                            </div>
+
+                                        </div>
 
                                     @else
 
@@ -530,45 +584,61 @@
                                 </td>
 
 
+                                {{-- Status --}}
                                 <td>
 
                                     <span
-                                        class="badge
-                                            {{
-                                                $stream->status === 'active'
-                                                    ? 'badge-success'
-                                                    : 'badge-danger'
-                                            }}"
+                                        class="badge {{
+                                            $stream->status === 'active'
+                                                ? 'badge-success'
+                                                : 'badge-danger'
+                                        }}"
                                     >
-                                        {{ ucfirst(
-                                            $stream->status
-                                        ) }}
+                                        {{ ucfirst($stream->status) }}
                                     </span>
 
                                 </td>
 
 
+                                {{-- Actions --}}
                                 <td>
 
-                                    <div class="table-actions">
+                                    <div class="table-icon-actions">
 
+                                        {{-- Edit --}}
                                         <a
                                             href="{{ route(
                                                 'school.streams.edit',
                                                 $stream
                                             ) }}"
-                                            class="button button-secondary button-small"
+                                            class="table-icon-button"
+                                            title="Edit stream"
+                                            aria-label="Edit {{ $stream->name }}"
                                         >
-                                            Edit
+
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                aria-hidden="true"
+                                            >
+                                                <path
+                                                    d="M13.5 6.5 17.5 10.5"
+                                                />
+                                                <path
+                                                    d="M4 20l4.25-1 9.8-9.8a2 2 0 0 0 0-2.82l-.43-.43a2 2 0 0 0-2.82 0L5 14.75 4 20Z"
+                                                />
+                                            </svg>
+
                                         </a>
 
 
+                                        {{-- Delete --}}
                                         <form
                                             method="POST"
                                             action="{{ route(
                                                 'school.streams.destroy',
                                                 $stream
                                             ) }}"
+                                            class="table-icon-form"
                                         >
 
                                             @csrf
@@ -577,10 +647,37 @@
 
                                             <button
                                                 type="submit"
-                                                class="button button-ghost button-small"
+                                                class="table-icon-button table-icon-button--danger"
+                                                title="Delete stream"
+                                                aria-label="Delete {{ $stream->name }}"
                                                 data-confirm="Delete stream {{ $stream->name }}?"
                                             >
-                                                Delete
+
+                                                <svg
+                                                    viewBox="0 0 24 24"
+                                                    aria-hidden="true"
+                                                >
+                                                    <path
+                                                        d="M4 7h16"
+                                                    />
+
+                                                    <path
+                                                        d="M9 7V4h6v3"
+                                                    />
+
+                                                    <path
+                                                        d="M7 7l1 13h8l1-13"
+                                                    />
+
+                                                    <path
+                                                        d="M10 11v5"
+                                                    />
+
+                                                    <path
+                                                        d="M14 11v5"
+                                                    />
+                                                </svg>
+
                                             </button>
 
                                         </form>

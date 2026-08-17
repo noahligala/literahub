@@ -176,9 +176,12 @@
                                 {{-- Teacher --}}
                                 <td>
 
-                                    <div class="student-cell">
+                                    <div class="directory-person">
 
-                                        <span class="user-avatar">
+                                        <span
+                                            class="directory-avatar"
+                                            aria-hidden="true"
+                                        >
                                             {{ strtoupper(
                                                 substr(
                                                     $teacher->name,
@@ -189,23 +192,25 @@
                                         </span>
 
 
-                                        <div>
+                                        <div class="directory-person__details">
 
-                                            <a
-                                                href="{{ route(
-                                                    'school.teachers.show',
-                                                    $teacher
-                                                ) }}"
-                                            >
-                                                <strong>
+                                            <div class="directory-person__name">
+
+                                                <a
+                                                    href="{{ route(
+                                                        'school.teachers.show',
+                                                        $teacher
+                                                    ) }}"
+                                                >
                                                     {{ $teacher->name }}
-                                                </strong>
-                                            </a>
+                                                </a>
+
+                                            </div>
 
 
-                                            <small>
+                                            <div class="directory-person__meta">
                                                 Teaching Staff
-                                            </small>
+                                            </div>
 
                                         </div>
 
@@ -217,9 +222,9 @@
                                 {{-- Employee Number --}}
                                 <td>
 
-                                    {{ $teacher->pivot->reference_number
-                                        ?? '—'
-                                    }}
+                                    <span class="table-value">
+                                        {{ $teacher->pivot->reference_number ?? '—' }}
+                                    </span>
 
                                 </td>
 
@@ -227,7 +232,9 @@
                                 {{-- Email --}}
                                 <td>
 
-                                    {{ $teacher->email }}
+                                    <span class="table-email">
+                                        {{ $teacher->email }}
+                                    </span>
 
                                 </td>
 
@@ -235,7 +242,9 @@
                                 {{-- Phone --}}
                                 <td>
 
-                                    {{ $teacher->phone ?? '—' }}
+                                    <span class="table-value">
+                                        {{ $teacher->phone ?? '—' }}
+                                    </span>
 
                                 </td>
 
@@ -250,7 +259,7 @@
                                             @foreach(
                                                 $teacher
                                                     ->teachingClasses
-                                                    ->take(3)
+                                                    ->take(2)
                                                 as $class
                                             )
 
@@ -270,16 +279,16 @@
                                             @if(
                                                 $teacher
                                                     ->teachingClasses
-                                                    ->count() > 3
+                                                    ->count() > 2
                                             )
 
                                                 <span
                                                     class="badge"
-                                                    title="{{ $teacher->teachingClasses->count() - 3 }} more classes"
+                                                    title="{{ $teacher->teachingClasses->count() - 2 }} more classes"
                                                 >
                                                     +{{ $teacher
                                                         ->teachingClasses
-                                                        ->count() - 3
+                                                        ->count() - 2
                                                     }}
                                                 </span>
 
@@ -333,30 +342,65 @@
                                 {{-- Actions --}}
                                 <td>
 
-                                    <div class="table-actions">
+                                    <div class="table-icon-actions">
 
+                                        {{-- View --}}
                                         <a
                                             href="{{ route(
                                                 'school.teachers.show',
                                                 $teacher
                                             ) }}"
-                                            class="button button-secondary button-small"
+                                            class="table-icon-button"
+                                            title="View teacher"
+                                            aria-label="View {{ $teacher->name }}"
                                         >
-                                            View
+
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                aria-hidden="true"
+                                            >
+                                                <path
+                                                    d="M2.25 12s3.5-6 9.75-6 9.75 6 9.75 6-3.5 6-9.75 6S2.25 12 2.25 12Z"
+                                                />
+
+                                                <circle
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="2.75"
+                                                />
+                                            </svg>
+
                                         </a>
 
 
+                                        {{-- Edit --}}
                                         <a
                                             href="{{ route(
                                                 'school.teachers.edit',
                                                 $teacher
                                             ) }}"
-                                            class="button button-ghost button-small"
+                                            class="table-icon-button"
+                                            title="Edit teacher"
+                                            aria-label="Edit {{ $teacher->name }}"
                                         >
-                                            Edit
+
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                aria-hidden="true"
+                                            >
+                                                <path
+                                                    d="M13.5 6.5 17.5 10.5"
+                                                />
+
+                                                <path
+                                                    d="M4 20l4.25-1 9.8-9.8a2 2 0 0 0 0-2.82l-.43-.43a2 2 0 0 0-2.82 0L5 14.75 4 20Z"
+                                                />
+                                            </svg>
+
                                         </a>
 
 
+                                        {{-- Deactivate --}}
                                         @if(
                                             ($teacher->pivot->status
                                                 ?? $teacher->status)
@@ -369,17 +413,36 @@
                                                     'school.teachers.destroy',
                                                     $teacher
                                                 ) }}"
+                                                class="table-icon-form"
                                             >
 
                                                 @csrf
                                                 @method('DELETE')
 
+
                                                 <button
                                                     type="submit"
-                                                    class="button button-ghost button-small"
+                                                    class="table-icon-button table-icon-button--danger"
+                                                    title="Deactivate teacher"
+                                                    aria-label="Deactivate {{ $teacher->name }}"
                                                     data-confirm="Deactivate {{ $teacher->name }}?"
                                                 >
-                                                    Deactivate
+
+                                                    <svg
+                                                        viewBox="0 0 24 24"
+                                                        aria-hidden="true"
+                                                    >
+                                                        <circle
+                                                            cx="12"
+                                                            cy="12"
+                                                            r="9"
+                                                        />
+
+                                                        <path
+                                                            d="M8 12h8"
+                                                        />
+                                                    </svg>
+
                                                 </button>
 
                                             </form>

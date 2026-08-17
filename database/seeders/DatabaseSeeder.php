@@ -107,5 +107,32 @@ class DatabaseSeeder extends Seeder
                 'is_active',
             ]
         );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Demo Library Data
+        |--------------------------------------------------------------------------
+        |
+        | Creates:
+        | - Demo platform users
+        | - School administrators
+        | - Teachers
+        | - Students
+        | - Publishers
+        | - Authors
+        | - Books
+        | - Classes and streams
+        | - School licences
+        | - Borrowings
+        | - Bookmarks
+        | - Access requests
+        | - Demo PDF files
+        |
+        */
+
+        $this->call([
+            LibraryDemoSeeder::class,
+        ]);
     }
 }

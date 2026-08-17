@@ -3259,3 +3259,1008 @@ html[data-theme="dark"] .form-card__header {
 .teacher-class-list .badge {
     white-space: nowrap;
 }
+
+/* =========================================================
+   Condensed Directory Tables
+   ========================================================= */
+
+.table-wrapper table {
+    width: 100%;
+
+    border-collapse: collapse;
+}
+
+.table-wrapper th,
+.table-wrapper td {
+    padding:
+        6px 8px;
+
+    vertical-align: middle;
+}
+
+.table-wrapper th {
+    font-size: 0.59rem;
+    font-weight: 800;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.045em;
+
+    white-space: nowrap;
+}
+
+.table-wrapper td {
+    font-size: 0.68rem;
+
+    line-height: 1.25;
+}
+
+.table-wrapper tbody tr {
+    height: 42px;
+}
+
+
+/* =========================================================
+   Student / Person Cell
+   ========================================================= */
+
+.directory-person {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    min-width: 0;
+}
+
+.directory-avatar {
+    width: 27px;
+    height: 27px;
+
+    flex:
+        0 0 27px;
+
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border:
+        1px solid var(--color-border);
+
+    border-radius: 50%;
+
+    background:
+        var(--color-surface-soft);
+
+    color:
+        var(--color-primary);
+
+    font-size: 0.62rem;
+    font-weight: 800;
+
+    line-height: 1;
+}
+
+.directory-person__details {
+    min-width: 0;
+}
+
+.directory-person__name {
+    display: flex;
+
+    align-items: center;
+
+    min-width: 0;
+}
+
+.directory-person__name a {
+    color:
+        var(--color-text);
+
+    font-size: 0.7rem;
+    font-weight: 750;
+
+    line-height: 1.2;
+
+    text-decoration: none;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+.directory-person__name a:hover {
+    color:
+        var(--color-primary);
+}
+
+.directory-person__meta {
+    margin-top: 1px;
+
+    color:
+        var(--color-text-muted);
+
+    font-size: 0.58rem;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   Compact Table Values
+   ========================================================= */
+
+.table-value,
+.table-link,
+.table-email {
+    font-size: 0.66rem;
+}
+
+.table-link {
+    color:
+        var(--color-primary);
+
+    font-weight: 700;
+
+    text-decoration: none;
+}
+
+.table-link:hover {
+    text-decoration: underline;
+}
+
+.table-email {
+    display: inline-block;
+
+    max-width: 190px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+.table-secondary {
+    display: block;
+
+    margin-top: 1px;
+
+    color:
+        var(--color-text-muted);
+
+    font-size: 0.56rem;
+}
+
+
+/* =========================================================
+   Icon Actions
+   ========================================================= */
+
+.table-icon-actions {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 3px;
+
+    white-space: nowrap;
+}
+
+.table-icon-form {
+    display: inline-flex;
+
+    width: auto;
+
+    margin: 0;
+}
+
+.table-icon-button {
+    width: 28px;
+    height: 28px;
+
+    flex:
+        0 0 28px;
+
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border:
+        1px solid var(--color-border);
+
+    border-radius:
+        var(--radius-sm);
+
+    background:
+        var(--color-surface);
+
+    color:
+        var(--color-text-muted);
+
+    cursor: pointer;
+
+    text-decoration: none;
+
+    transition:
+        color var(--transition-fast),
+        background var(--transition-fast),
+        border-color var(--transition-fast);
+}
+
+.table-icon-button svg {
+    width: 14px;
+    height: 14px;
+
+    display: block;
+
+    fill: none;
+
+    stroke: currentColor;
+
+    stroke-width: 1.8;
+
+    stroke-linecap: round;
+
+    stroke-linejoin: round;
+}
+
+.table-icon-button:hover {
+    color:
+        var(--color-primary);
+
+    border-color:
+        var(--brand-300);
+
+    background:
+        var(--color-surface-soft);
+}
+
+.table-icon-button--danger:hover {
+    color:
+        var(--danger);
+
+    border-color:
+        var(--danger);
+}
+
+
+/* =========================================================
+   Compact Status Badge
+   ========================================================= */
+
+.table-wrapper .badge {
+    padding:
+        3px 6px;
+
+    font-size: 0.56rem;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   Mobile
+   ========================================================= */
+
+@media (max-width: 767px) {
+
+    .table-wrapper th,
+    .table-wrapper td {
+        padding:
+            6px;
+    }
+
+    .directory-avatar {
+        width: 25px;
+        height: 25px;
+
+        flex-basis: 25px;
+    }
+
+    .table-icon-button {
+        width: 27px;
+        height: 27px;
+
+        flex-basis: 27px;
+    }
+
+}/* =========================================================
+   Condensed Directory Tables
+   ========================================================= */
+
+.table-wrapper table {
+    width: 100%;
+
+    border-collapse: collapse;
+}
+
+.table-wrapper th,
+.table-wrapper td {
+    padding:
+        6px 8px;
+
+    vertical-align: middle;
+}
+
+.table-wrapper th {
+    font-size: 0.59rem;
+    font-weight: 800;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.045em;
+
+    white-space: nowrap;
+}
+
+.table-wrapper td {
+    font-size: 0.68rem;
+
+    line-height: 1.25;
+}
+
+.table-wrapper tbody tr {
+    height: 42px;
+}
+
+
+/* =========================================================
+   Student / Person Cell
+   ========================================================= */
+
+.directory-person {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    min-width: 0;
+}
+
+.directory-avatar {
+    width: 27px;
+    height: 27px;
+
+    flex:
+        0 0 27px;
+
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border:
+        1px solid var(--color-border);
+
+    border-radius: 50%;
+
+    background:
+        var(--color-surface-soft);
+
+    color:
+        var(--color-primary);
+
+    font-size: 0.62rem;
+    font-weight: 800;
+
+    line-height: 1;
+}
+
+.directory-person__details {
+    min-width: 0;
+}
+
+.directory-person__name {
+    display: flex;
+
+    align-items: center;
+
+    min-width: 0;
+}
+
+.directory-person__name a {
+    color:
+        var(--color-text);
+
+    font-size: 0.7rem;
+    font-weight: 750;
+
+    line-height: 1.2;
+
+    text-decoration: none;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+.directory-person__name a:hover {
+    color:
+        var(--color-primary);
+}
+
+.directory-person__meta {
+    margin-top: 1px;
+
+    color:
+        var(--color-text-muted);
+
+    font-size: 0.58rem;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   Compact Table Values
+   ========================================================= */
+
+.table-value,
+.table-link,
+.table-email {
+    font-size: 0.66rem;
+}
+
+.table-link {
+    color:
+        var(--color-primary);
+
+    font-weight: 700;
+
+    text-decoration: none;
+}
+
+.table-link:hover {
+    text-decoration: underline;
+}
+
+.table-email {
+    display: inline-block;
+
+    max-width: 190px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+.table-secondary {
+    display: block;
+
+    margin-top: 1px;
+
+    color:
+        var(--color-text-muted);
+
+    font-size: 0.56rem;
+}
+
+
+/* =========================================================
+   Icon Actions
+   ========================================================= */
+
+.table-icon-actions {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 3px;
+
+    white-space: nowrap;
+}
+
+.table-icon-form {
+    display: inline-flex;
+
+    width: auto;
+
+    margin: 0;
+}
+
+.table-icon-button {
+    width: 28px;
+    height: 28px;
+
+    flex:
+        0 0 28px;
+
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border:
+        1px solid var(--color-border);
+
+    border-radius:
+        var(--radius-sm);
+
+    background:
+        var(--color-surface);
+
+    color:
+        var(--color-text-muted);
+
+    cursor: pointer;
+
+    text-decoration: none;
+
+    transition:
+        color var(--transition-fast),
+        background var(--transition-fast),
+        border-color var(--transition-fast);
+}
+
+.table-icon-button svg {
+    width: 14px;
+    height: 14px;
+
+    display: block;
+
+    fill: none;
+
+    stroke: currentColor;
+
+    stroke-width: 1.8;
+
+    stroke-linecap: round;
+
+    stroke-linejoin: round;
+}
+
+.table-icon-button:hover {
+    color:
+        var(--color-primary);
+
+    border-color:
+        var(--brand-300);
+
+    background:
+        var(--color-surface-soft);
+}
+
+.table-icon-button--danger:hover {
+    color:
+        var(--danger);
+
+    border-color:
+        var(--danger);
+}
+
+
+/* =========================================================
+   Compact Status Badge
+   ========================================================= */
+
+.table-wrapper .badge {
+    padding:
+        3px 6px;
+
+    font-size: 0.56rem;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   Mobile
+   ========================================================= */
+
+@media (max-width: 767px) {
+
+    .table-wrapper th,
+    .table-wrapper td {
+        padding:
+            6px;
+    }
+
+    .directory-avatar {
+        width: 25px;
+        height: 25px;
+
+        flex-basis: 25px;
+    }
+
+    .table-icon-button {
+        width: 27px;
+        height: 27px;
+
+        flex-basis: 27px;
+    }
+
+}
+
+/* =========================================================
+   Condensed Directory Tables
+   ========================================================= */
+
+.table-wrapper table {
+    width: 100%;
+
+    border-collapse: collapse;
+}
+
+.table-wrapper th,
+.table-wrapper td {
+    padding:
+        6px 8px;
+
+    vertical-align: middle;
+}
+
+.table-wrapper th {
+    font-size: 0.59rem;
+    font-weight: 800;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.045em;
+
+    white-space: nowrap;
+}
+
+.table-wrapper td {
+    font-size: 0.68rem;
+
+    line-height: 1.25;
+}
+
+.table-wrapper tbody tr {
+    height: 42px;
+}
+
+
+/* =========================================================
+   Student / Person Cell
+   ========================================================= */
+
+.directory-person {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    min-width: 0;
+}
+
+.directory-avatar {
+    width: 27px;
+    height: 27px;
+
+    flex:
+        0 0 27px;
+
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border:
+        1px solid var(--color-border);
+
+    border-radius: 50%;
+
+    background:
+        var(--color-surface-soft);
+
+    color:
+        var(--color-primary);
+
+    font-size: 0.62rem;
+    font-weight: 800;
+
+    line-height: 1;
+}
+
+.directory-person__details {
+    min-width: 0;
+}
+
+.directory-person__name {
+    display: flex;
+
+    align-items: center;
+
+    min-width: 0;
+}
+
+.directory-person__name a {
+    color:
+        var(--color-text);
+
+    font-size: 0.7rem;
+    font-weight: 750;
+
+    line-height: 1.2;
+
+    text-decoration: none;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+.directory-person__name a:hover {
+    color:
+        var(--color-primary);
+}
+
+.directory-person__meta {
+    margin-top: 1px;
+
+    color:
+        var(--color-text-muted);
+
+    font-size: 0.58rem;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   Compact Table Values
+   ========================================================= */
+
+.table-value,
+.table-link,
+.table-email {
+    font-size: 0.66rem;
+}
+
+.table-link {
+    color:
+        var(--color-primary);
+
+    font-weight: 700;
+
+    text-decoration: none;
+}
+
+.table-link:hover {
+    text-decoration: underline;
+}
+
+.table-email {
+    display: inline-block;
+
+    max-width: 190px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+.table-secondary {
+    display: block;
+
+    margin-top: 1px;
+
+    color:
+        var(--color-text-muted);
+
+    font-size: 0.56rem;
+}
+
+
+/* =========================================================
+   Icon Actions
+   ========================================================= */
+
+.table-icon-actions {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 3px;
+
+    white-space: nowrap;
+}
+
+.table-icon-form {
+    display: inline-flex;
+
+    width: auto;
+
+    margin: 0;
+}
+
+.table-icon-button {
+    width: 28px;
+    height: 28px;
+
+    flex:
+        0 0 28px;
+
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border:
+        1px solid var(--color-border);
+
+    border-radius:
+        var(--radius-sm);
+
+    background:
+        var(--color-surface);
+
+    color:
+        var(--color-text-muted);
+
+    cursor: pointer;
+
+    text-decoration: none;
+
+    transition:
+        color var(--transition-fast),
+        background var(--transition-fast),
+        border-color var(--transition-fast);
+}
+
+.table-icon-button svg {
+    width: 14px;
+    height: 14px;
+
+    display: block;
+
+    fill: none;
+
+    stroke: currentColor;
+
+    stroke-width: 1.8;
+
+    stroke-linecap: round;
+
+    stroke-linejoin: round;
+}
+
+.table-icon-button:hover {
+    color:
+        var(--color-primary);
+
+    border-color:
+        var(--brand-300);
+
+    background:
+        var(--color-surface-soft);
+}
+
+.table-icon-button--danger:hover {
+    color:
+        var(--danger);
+
+    border-color:
+        var(--danger);
+}
+
+
+/* =========================================================
+   Compact Status Badge
+   ========================================================= */
+
+.table-wrapper .badge {
+    padding:
+        3px 6px;
+
+    font-size: 0.56rem;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   Mobile
+   ========================================================= */
+
+@media (max-width: 767px) {
+
+    .table-wrapper th,
+    .table-wrapper td {
+        padding:
+            6px;
+    }
+
+    .directory-avatar {
+        width: 25px;
+        height: 25px;
+
+        flex-basis: 25px;
+    }
+
+    .table-icon-button {
+        width: 27px;
+        height: 27px;
+
+        flex-basis: 27px;
+    }
+
+}
+
+/* =========================================================
+   Teacher Class List
+   ========================================================= */
+
+.teacher-class-list {
+    display: inline-flex;
+
+    flex-wrap: nowrap;
+
+    align-items: center;
+
+    gap: 3px;
+
+    max-width: 180px;
+
+    white-space: nowrap;
+}
+
+.teacher-class-list .badge {
+    padding:
+        3px 5px;
+
+    font-size: 0.55rem;
+}
+
+/* =========================================================
+   Small Directory Variant
+   ========================================================= */
+
+.directory-person--small {
+    gap: 5px;
+}
+
+.directory-avatar--small {
+    width: 22px;
+    height: 22px;
+
+    flex-basis: 22px;
+
+    font-size: 0.52rem;
+}
+
+
+/* =========================================================
+   Class / Stream Table
+   ========================================================= */
+
+.table-condensed .directory-person__name strong {
+    font-size: 0.68rem;
+    font-weight: 750;
+
+    white-space: nowrap;
+}
+
+.table-condensed .table-link {
+    font-size: 0.64rem;
+}
+
+.table-condensed td:last-child,
+.table-condensed th:last-child {
+    width: 1%;
+
+    white-space: nowrap;
+}

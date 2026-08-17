@@ -13,11 +13,12 @@
             </h1>
 
             <p>
-                Update student information, class assignment
-                and account status.
+                Update student information, class and stream
+                placement, admission details and account status.
             </p>
 
         </div>
+
 
         <div class="actions">
 
@@ -51,22 +52,41 @@
 
         <div class="form-card__header">
 
-            <h3>
-                Student Information
-            </h3>
+            <div>
 
-            <p>
-                Edit personal information, admission details
-                and access settings.
-            </p>
+                <span class="eyebrow">
+                    Student Account
+                </span>
+
+                <h3>
+                    Student Information
+                </h3>
+
+                <p>
+                    Edit personal information, admission
+                    details, class placement, stream assignment
+                    and access settings.
+                </p>
+
+            </div>
 
         </div>
 
 
-        @include(
-            'school.students._form'
-        )
+        {{-- =====================================================
+             Student Form Component
+             ===================================================== --}}
 
+        <x-forms.student
+            :student="$student"
+            :school="$school"
+            :classes="$classes"
+        />
+
+
+        {{-- =====================================================
+             Form Actions
+             ===================================================== --}}
 
         <div class="form-actions">
 

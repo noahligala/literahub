@@ -3,17 +3,28 @@
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\DashboardController;
 
+use App\Http\Controllers\AuthorController;
+use App\Http\Controllers\BookController;
+use App\Http\Controllers\BookLicenseController;
+use App\Http\Controllers\BookReviewController;
+use App\Http\Controllers\PublisherController;
+use App\Http\Controllers\ReaderController;
+
 use App\Http\Controllers\School\AssignmentController;
+use App\Http\Controllers\School\BookAccessRequestController;
+use App\Http\Controllers\School\BookLicenseController as SchoolBookLicenseController;
 use App\Http\Controllers\School\ClassController;
+use App\Http\Controllers\School\LibraryController;
 use App\Http\Controllers\School\StreamController;
 use App\Http\Controllers\School\StudentController;
 use App\Http\Controllers\School\TeacherController;
 
 use Illuminate\Support\Facades\Route;
 
+
 /*
 |--------------------------------------------------------------------------
-| Public Routes
+| Public
 |--------------------------------------------------------------------------
 */
 
@@ -26,81 +37,78 @@ Route::view('/pricing', 'pricing')
 
 /*
 |--------------------------------------------------------------------------
-| Custom LiteraHub Registration
+| Registration
 |--------------------------------------------------------------------------
-|
-| Fortify continues to handle:
-| - login
-| - logout
-| - password reset
-| - two-factor authentication
-| - passkeys
-|
-| Public registration is handled by LiteraHub.
-|
 */
 
-Route::middleware('guest')->group(function () {
+Route::middleware('guest')
+    ->group(function () {
 
-    /*
-    |--------------------------------------------------------------------------
-    | Registration Choice
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get(
-        '/register',
-        [RegistrationController::class, 'choose']
-    )->name('register');
+        Route::get(
+            '/register',
+            [
+                RegistrationController::class,
+                'choose',
+            ]
+        )->name('register');
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | School Registration
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get(
-        '/register/school',
-        [RegistrationController::class, 'school']
-    )->name('register.school');
-
-    Route::post(
-        '/register/school',
-        [RegistrationController::class, 'storeSchool']
-    )
-        ->middleware('throttle:10,1')
-        ->name('register.school.store');
+        Route::get(
+            '/register/school',
+            [
+                RegistrationController::class,
+                'school',
+            ]
+        )->name(
+            'register.school'
+        );
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Individual Student Registration
-    |--------------------------------------------------------------------------
-    */
+        Route::post(
+            '/register/school',
+            [
+                RegistrationController::class,
+                'storeSchool',
+            ]
+        )
+            ->middleware('throttle:10,1')
+            ->name(
+                'register.school.store'
+            );
 
-    Route::get(
-        '/register/student',
-        [RegistrationController::class, 'student']
-    )->name('register.student');
 
-    Route::post(
-        '/register/student',
-        [RegistrationController::class, 'storeStudent']
-    )
-        ->middleware('throttle:10,1')
-        ->name('register.student.store');
+        Route::get(
+            '/register/student',
+            [
+                RegistrationController::class,
+                'student',
+            ]
+        )->name(
+            'register.student'
+        );
 
-});
+
+        Route::post(
+            '/register/student',
+            [
+                RegistrationController::class,
+                'storeStudent',
+            ]
+        )
+            ->middleware('throttle:10,1')
+            ->name(
+                'register.student.store'
+            );
+    });
 
 
 /*
 |--------------------------------------------------------------------------
-| Dashboard Router
+| Central Dashboard Router
 |--------------------------------------------------------------------------
 |
-| After authentication, DashboardController redirects each user to the
-| correct portal based on their assigned LiteraHub role.
+| All authenticated users are sent here after login.
+| DashboardController determines the correct portal.
 |
 */
 
@@ -114,13 +122,13 @@ Route::get(
 
 /*
 |--------------------------------------------------------------------------
-| Platform Administration
+| Super Administrator
 |--------------------------------------------------------------------------
 */
 
 Route::middleware([
     'auth',
-    'role:super_admin|platform_admin',
+    'role:super_admin',
 ])
     ->prefix('admin')
     ->name('admin.')
@@ -128,9 +136,33 @@ Route::middleware([
 
         Route::view(
             '/',
+            'dashboards.superadmin'
+        )->name('dashboard');
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| Platform Administrator
+|--------------------------------------------------------------------------
+|
+| Important:
+| Platform admin no longer shares /admin with super admin.
+|
+*/
+
+Route::middleware([
+    'auth',
+    'role:platform_admin',
+])
+    ->prefix('platform')
+    ->name('platform.')
+    ->group(function () {
+
+        Route::view(
+            '/',
             'dashboards.admin'
         )->name('dashboard');
-
     });
 
 
@@ -138,13 +170,6 @@ Route::middleware([
 |--------------------------------------------------------------------------
 | Platform Staff
 |--------------------------------------------------------------------------
-|
-| Used by:
-| - content_manager
-| - author
-| - finance
-| - support
-|
 */
 
 Route::middleware([
@@ -159,13 +184,359 @@ Route::middleware([
             '/',
             'dashboards.staff'
         )->name('dashboard');
-
     });
 
 
 /*
 |--------------------------------------------------------------------------
-| School Administrator Portal
+| Global Catalogue Management
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware([
+    'auth',
+    'role:super_admin|platform_admin|content_manager|author',
+])
+    ->group(function () {
+
+        Route::resource(
+            'publishers',
+            PublisherController::class
+        );
+
+        Route::resource(
+            'authors',
+            AuthorController::class
+        );
+
+        Route::resource(
+            'books',
+            BookController::class
+        );
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| Book Review Workflow
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware([
+    'auth',
+    'role:super_admin|platform_admin|content_manager',
+])
+    ->prefix('book-reviews')
+    ->name('book-reviews.')
+    ->group(function () {
+
+        Route::get(
+            '/',
+            [
+                BookReviewController::class,
+                'index',
+            ]
+        )->name('index');
+
+
+        Route::get(
+            '/{book}',
+            [
+                BookReviewController::class,
+                'show',
+            ]
+        )->name('show');
+
+
+        Route::patch(
+            '/{book}/approve',
+            [
+                BookReviewController::class,
+                'approve',
+            ]
+        )->name('approve');
+
+
+        Route::patch(
+            '/{book}/publish',
+            [
+                BookReviewController::class,
+                'publish',
+            ]
+        )->name('publish');
+
+
+        Route::patch(
+            '/{book}/request-changes',
+            [
+                BookReviewController::class,
+                'requestChanges',
+            ]
+        )->name(
+            'request-changes'
+        );
+
+
+        Route::patch(
+            '/{book}/reject',
+            [
+                BookReviewController::class,
+                'reject',
+            ]
+        )->name('reject');
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| Book Licence Administration
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware([
+    'auth',
+    'role:super_admin|platform_admin|content_manager|author|finance',
+])
+    ->group(function () {
+
+        Route::resource(
+            'book-licenses',
+            BookLicenseController::class
+        )->except([
+            'destroy',
+        ]);
+
+
+        Route::patch(
+            '/book-licenses/{bookLicense}/revoke',
+            [
+                BookLicenseController::class,
+                'revoke',
+            ]
+        )->name(
+            'book-licenses.revoke'
+        );
+
+
+        Route::post(
+            '/book-licenses/{bookLicense}/renew',
+            [
+                BookLicenseController::class,
+                'renew',
+            ]
+        )->name(
+            'book-licenses.renew'
+        );
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| Protected Reader
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')
+    ->prefix('reader')
+    ->name('reader.')
+    ->group(function () {
+
+        Route::get(
+            '/{book}',
+            [
+                ReaderController::class,
+                'show',
+            ]
+        )->name('show');
+
+
+        Route::get(
+            '/{book}/stream',
+            [
+                ReaderController::class,
+                'stream',
+            ]
+        )
+            ->middleware('throttle:120,1')
+            ->name('stream');
+
+
+        Route::get(
+            '/{book}/download',
+            [
+                ReaderController::class,
+                'download',
+            ]
+        )
+            ->middleware('throttle:20,1')
+            ->name('download');
+
+
+        Route::get(
+            '/{book}/print',
+            [
+                ReaderController::class,
+                'printSource',
+            ]
+        )
+            ->middleware('throttle:20,1')
+            ->name('print');
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| Shared School Library
+|--------------------------------------------------------------------------
+|
+| School administrators, teachers and students may enter the institutional
+| library, while school management functions remain school_admin only.
+|
+*/
+
+Route::middleware([
+    'auth',
+    'role:school_admin|teacher|student',
+])
+    ->prefix('school/library')
+    ->name('school.library.')
+    ->group(function () {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Catalogue
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/',
+            [
+                LibraryController::class,
+                'index',
+            ]
+        )->name('index');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Access Requests
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/requests',
+            [
+                BookAccessRequestController::class,
+                'index',
+            ]
+        )->name(
+            'requests.index'
+        );
+
+
+        Route::get(
+            '/requests/{accessRequest}',
+            [
+                BookAccessRequestController::class,
+                'show',
+            ]
+        )->name(
+            'requests.show'
+        );
+
+
+        Route::patch(
+            '/requests/{accessRequest}/approve',
+            [
+                BookAccessRequestController::class,
+                'approve',
+            ]
+        )->name(
+            'requests.approve'
+        );
+
+
+        Route::patch(
+            '/requests/{accessRequest}/reject',
+            [
+                BookAccessRequestController::class,
+                'reject',
+            ]
+        )->name(
+            'requests.reject'
+        );
+
+
+        Route::delete(
+            '/requests/{accessRequest}',
+            [
+                BookAccessRequestController::class,
+                'destroy',
+            ]
+        )->name(
+            'requests.destroy'
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Book
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/books/{book}',
+            [
+                LibraryController::class,
+                'show',
+            ]
+        )->name('show');
+
+
+        Route::post(
+            '/books/{book}/borrow',
+            [
+                LibraryController::class,
+                'borrow',
+            ]
+        )->name('borrow');
+
+
+        Route::patch(
+            '/books/{book}/return',
+            [
+                LibraryController::class,
+                'returnBook',
+            ]
+        )->name('return');
+
+
+        Route::post(
+            '/books/{book}/bookmarks',
+            [
+                LibraryController::class,
+                'bookmark',
+            ]
+        )->name(
+            'bookmarks.store'
+        );
+
+
+        Route::post(
+            '/books/{book}/request-access',
+            [
+                BookAccessRequestController::class,
+                'store',
+            ]
+        )->name(
+            'requests.store'
+        );
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| School Administrator
 |--------------------------------------------------------------------------
 */
 
@@ -191,38 +562,30 @@ Route::middleware([
 
         /*
         |--------------------------------------------------------------------------
-        | Institution Profile
+        | Institution
         |--------------------------------------------------------------------------
-        |
-        | These remain view routes temporarily until ProfileController
-        | is implemented.
-        |
         */
 
         Route::view(
             '/profile',
             'school.profile.show'
-        )->name('profile.show');
+        )->name(
+            'profile.show'
+        );
+
 
         Route::view(
             '/profile/edit',
             'school.profile.edit'
-        )->name('profile.edit');
+        )->name(
+            'profile.edit'
+        );
 
 
         /*
         |--------------------------------------------------------------------------
         | Students
         |--------------------------------------------------------------------------
-        |
-        | GET        /school/students
-        | GET        /school/students/create
-        | POST       /school/students
-        | GET        /school/students/{student}
-        | GET        /school/students/{student}/edit
-        | PUT/PATCH  /school/students/{student}
-        | DELETE     /school/students/{student}
-        |
         */
 
         Route::resource(
@@ -247,10 +610,6 @@ Route::middleware([
         |--------------------------------------------------------------------------
         | Classes
         |--------------------------------------------------------------------------
-        |
-        | Uses SchoolClass model internally while preserving URLs such as:
-        | /school/classes/1
-        |
         */
 
         Route::resource(
@@ -261,63 +620,127 @@ Route::middleware([
 
         /*
         |--------------------------------------------------------------------------
-        | Class Streams
+        | Streams
         |--------------------------------------------------------------------------
-        |
-        | Streams are managed within an institution's classes.
-        |
         */
 
         Route::get(
             '/classes/{class}/streams/create',
-            [StreamController::class, 'create']
-        )->name('streams.create');
+            [
+                StreamController::class,
+                'create',
+            ]
+        )->name(
+            'streams.create'
+        );
+
 
         Route::post(
             '/classes/{class}/streams',
-            [StreamController::class, 'store']
-        )->name('streams.store');
+            [
+                StreamController::class,
+                'store',
+            ]
+        )->name(
+            'streams.store'
+        );
+
 
         Route::get(
             '/streams/{stream}/edit',
-            [StreamController::class, 'edit']
-        )->name('streams.edit');
+            [
+                StreamController::class,
+                'edit',
+            ]
+        )->name(
+            'streams.edit'
+        );
+
 
         Route::put(
             '/streams/{stream}',
-            [StreamController::class, 'update']
-        )->name('streams.update');
+            [
+                StreamController::class,
+                'update',
+            ]
+        )->name(
+            'streams.update'
+        );
+
 
         Route::patch(
             '/streams/{stream}',
-            [StreamController::class, 'update']
-        )->name('streams.patch');
+            [
+                StreamController::class,
+                'update',
+            ]
+        )->name(
+            'streams.patch'
+        );
+
 
         Route::delete(
             '/streams/{stream}',
-            [StreamController::class, 'destroy']
-        )->name('streams.destroy');
+            [
+                StreamController::class,
+                'destroy',
+            ]
+        )->name(
+            'streams.destroy'
+        );
 
 
         /*
         |--------------------------------------------------------------------------
-        | Digital Library
+        | School Book Licences
         |--------------------------------------------------------------------------
-        |
-        | Currently presentation routes.
-        | These can later be replaced by LibraryController.
-        |
         */
 
-        Route::view(
-            '/library',
-            'school.library.index'
-        )->name('library.index');
+        Route::get(
+            '/library/licenses',
+            [
+                SchoolBookLicenseController::class,
+                'index',
+            ]
+        )->name(
+            'library.licenses.index'
+        );
 
-        Route::view(
-            '/library/{resource}',
-            'school.library.show'
-        )->name('library.show');
+
+        /*
+         * Must remain before /licenses/{license}.
+         */
+        Route::get(
+            '/library/licenses/catalogue',
+            [
+                SchoolBookLicenseController::class,
+                'catalogue',
+            ]
+        )->name(
+            'library.licenses.catalogue'
+        );
+
+
+        Route::post(
+            '/library/licenses/request/{book}',
+            [
+                SchoolBookLicenseController::class,
+                'requestLicense',
+            ]
+        )->name(
+            'library.licenses.request'
+        );
+
+
+        Route::get(
+            '/library/licenses/{license}',
+            [
+                SchoolBookLicenseController::class,
+                'show',
+            ]
+        )->name(
+            'library.licenses.show'
+        );
 
 
         /*
@@ -334,34 +757,48 @@ Route::middleware([
 
         /*
         |--------------------------------------------------------------------------
-        | Subscription & Billing
+        | Subscription
         |--------------------------------------------------------------------------
         */
 
         Route::view(
             '/subscription',
             'school.subscription.index'
-        )->name('subscription.index');
+        )->name(
+            'subscription.index'
+        );
+
 
         Route::view(
             '/subscription/plans',
             'school.subscription.plans'
-        )->name('subscription.plans');
+        )->name(
+            'subscription.plans'
+        );
+
 
         Route::view(
             '/subscription/checkout',
             'school.subscription.checkout'
-        )->name('subscription.checkout');
+        )->name(
+            'subscription.checkout'
+        );
+
 
         Route::view(
             '/subscription/payments',
             'school.subscription.payments'
-        )->name('subscription.payments');
+        )->name(
+            'subscription.payments'
+        );
+
 
         Route::view(
             '/subscription/invoice',
             'school.subscription.invoice'
-        )->name('subscription.invoice');
+        )->name(
+            'subscription.invoice'
+        );
 
 
         /*
@@ -373,33 +810,49 @@ Route::middleware([
         Route::view(
             '/reports',
             'school.reports.index'
-        )->name('reports.index');
+        )->name(
+            'reports.index'
+        );
+
 
         Route::view(
             '/reports/students',
             'school.reports.students'
-        )->name('reports.students');
+        )->name(
+            'reports.students'
+        );
+
 
         Route::view(
             '/reports/classes',
             'school.reports.classes'
-        )->name('reports.classes');
+        )->name(
+            'reports.classes'
+        );
+
 
         Route::view(
             '/reports/resources',
             'school.reports.resources'
-        )->name('reports.resources');
+        )->name(
+            'reports.resources'
+        );
+
 
         Route::view(
             '/reports/assignments',
             'school.reports.assignments'
-        )->name('reports.assignments');
+        )->name(
+            'reports.assignments'
+        );
+
 
         Route::view(
             '/reports/licences',
             'school.reports.licences'
-        )->name('reports.licences');
-
+        )->name(
+            'reports.licences'
+        );
     });
 
 
@@ -417,92 +870,70 @@ Route::middleware([
     ->name('teacher.')
     ->group(function () {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Teacher Dashboard
-        |--------------------------------------------------------------------------
-        */
-
         Route::view(
             '/',
             'dashboards.teacher'
         )->name('dashboard');
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Teacher Classes
-        |--------------------------------------------------------------------------
-        |
-        | Placeholder pages for now.
-        |
-        */
-
         Route::view(
             '/classes',
             'teacher.classes.index'
-        )->name('classes.index');
+        )->name(
+            'classes.index'
+        );
 
 
         /*
-        |--------------------------------------------------------------------------
-        | Teacher Library
-        |--------------------------------------------------------------------------
-        */
+         * Teacher library shares the institutional library.
+         */
 
-        Route::view(
+        Route::redirect(
             '/library',
-            'teacher.library.index'
-        )->name('library.index');
+            '/school/library'
+        )->name(
+            'library.index'
+        );
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Teacher Reading Lists
-        |--------------------------------------------------------------------------
-        */
+        Route::redirect(
+            '/library/requests',
+            '/school/library/requests'
+        )->name(
+            'library.requests'
+        );
+
 
         Route::view(
             '/reading-lists',
             'teacher.reading-lists.index'
-        )->name('reading-lists.index');
+        )->name(
+            'reading-lists.index'
+        );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Teacher Assignments
-        |--------------------------------------------------------------------------
-        */
 
         Route::view(
             '/assignments',
             'teacher.assignments.index'
-        )->name('assignments.index');
+        )->name(
+            'assignments.index'
+        );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Teacher Students
-        |--------------------------------------------------------------------------
-        */
 
         Route::view(
             '/students',
             'teacher.students.index'
-        )->name('students.index');
+        )->name(
+            'students.index'
+        );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Teacher Performance
-        |--------------------------------------------------------------------------
-        */
 
         Route::view(
             '/performance',
             'teacher.performance.index'
-        )->name('performance.index');
-
+        )->name(
+            'performance.index'
+        );
     });
 
 
@@ -510,6 +941,11 @@ Route::middleware([
 |--------------------------------------------------------------------------
 | Learner / Individual Subscriber Portal
 |--------------------------------------------------------------------------
+|
+| Individual subscribers use this portal directly.
+|
+| School students are redirected to /school/library by DashboardController.
+|
 */
 
 Route::middleware([
@@ -520,23 +956,11 @@ Route::middleware([
     ->name('library.')
     ->group(function () {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Learner Dashboard
-        |--------------------------------------------------------------------------
-        */
-
         Route::view(
             '/',
             'dashboards.library'
         )->name('dashboard');
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Browse Library
-        |--------------------------------------------------------------------------
-        */
 
         Route::view(
             '/browse',
@@ -544,87 +968,58 @@ Route::middleware([
         )->name('browse');
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Continue Reading
-        |--------------------------------------------------------------------------
-        */
-
         Route::view(
             '/continue-reading',
             'library.continue-reading'
-        )->name('continue-reading');
+        )->name(
+            'continue-reading'
+        );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Bookmarks
-        |--------------------------------------------------------------------------
-        */
 
         Route::view(
             '/bookmarks',
             'library.bookmarks'
-        )->name('bookmarks');
+        )->name(
+            'bookmarks'
+        );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Notes
-        |--------------------------------------------------------------------------
-        */
 
         Route::view(
             '/notes',
             'library.notes'
-        )->name('notes');
+        )->name(
+            'notes'
+        );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Learner Assignments
-        |--------------------------------------------------------------------------
-        */
 
         Route::view(
             '/assignments',
             'library.assignments'
-        )->name('assignments');
+        )->name(
+            'assignments'
+        );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Reading Progress
-        |--------------------------------------------------------------------------
-        */
 
         Route::view(
             '/progress',
             'library.progress'
-        )->name('progress');
+        )->name(
+            'progress'
+        );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Subscription
-        |--------------------------------------------------------------------------
-        */
 
         Route::view(
             '/subscription',
             'library.subscription'
-        )->name('subscription');
+        )->name(
+            'subscription'
+        );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Profile
-        |--------------------------------------------------------------------------
-        */
 
         Route::view(
             '/profile',
             'library.profile'
-        )->name('profile');
-
+        )->name(
+            'profile'
+        );
     });

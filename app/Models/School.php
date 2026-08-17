@@ -77,4 +77,62 @@ class School extends Model
     {
         return $this->hasMany(Assignment::class);
     }
+
+    public function bookLicenses(): HasMany
+    {
+        return $this->hasMany(
+            SchoolBookLicense::class
+        );
+    }
+
+    public function borrowings(): HasMany
+    {
+        return $this->hasMany(
+            BookBorrowing::class
+        );
+    }
+
+    public function bookAccessRequests(): HasMany
+    {
+        return $this->hasMany(
+            BookAccessRequest::class
+        );
+    }
+
+    // public function licensedBooks()
+    // {
+    //     return Book::query()
+    //         ->whereHas(
+    //             'licenses',
+    //             function ($query) {
+    //                 $query
+    //                     ->where(
+    //                         'school_id',
+    //                         $this->id
+    //                     )
+    //                     ->where(
+    //                         'status',
+    //                         'active'
+    //                     )
+    //                     ->where(
+    //                         'starts_at',
+    //                         '<=',
+    //                         now()
+    //                     )
+    //                     ->where(
+    //                         function ($query) {
+    //                             $query
+    //                                 ->whereNull(
+    //                                     'expires_at'
+    //                                 )
+    //                                 ->orWhere(
+    //                                     'expires_at',
+    //                                     '>',
+    //                                     now()
+    //                                 );
+    //                         }
+    //                     );
+    //             }
+    //         );
+    // }
 }

@@ -170,27 +170,32 @@
 
                     <tbody>
 
-                        @foreach($students as $student)
+                    @foreach($students as $student)
 
-                            <tr>
+                        <tr>
 
-                                {{-- Student --}}
-                                <td>
+                            {{-- Student --}}
+                            <td>
 
-                                    <div class="student-cell">
+                                <div class="directory-person">
 
-                                        <span class="user-avatar">
-                                            {{ strtoupper(
-                                                substr(
-                                                    $student->name,
-                                                    0,
-                                                    1
-                                                )
-                                            ) }}
-                                        </span>
+                                    <span
+                                        class="directory-avatar"
+                                        aria-hidden="true"
+                                    >
+                                        {{ strtoupper(
+                                            substr(
+                                                $student->name,
+                                                0,
+                                                1
+                                            )
+                                        ) }}
+                                    </span>
 
 
-                                        <div>
+                                    <div class="directory-person__details">
+
+                                        <div class="directory-person__name">
 
                                             <a
                                                 href="{{ route(
@@ -198,172 +203,255 @@
                                                     $student
                                                 ) }}"
                                             >
-                                                <strong>
-                                                    {{ $student->name }}
-                                                </strong>
+                                                {{ $student->name }}
                                             </a>
-
-                                            @if($student->phone)
-
-                                                <small>
-                                                    {{ $student->phone }}
-                                                </small>
-
-                                            @endif
 
                                         </div>
 
-                                    </div>
 
-                                </td>
+                                        @if($student->phone)
 
-
-                                {{-- Admission Number --}}
-                                <td>
-
-                                    {{ $student->pivot->reference_number
-                                        ?? '—'
-                                    }}
-
-                                </td>
-
-
-                                {{-- Class --}}
-                                <td>
-
-                                    @php
-                                        $studentClass =
-                                            $student
-                                                ->studentClasses
-                                                ->first();
-                                    @endphp
-
-                                    @if($studentClass)
-
-                                        <a
-                                            href="{{ route(
-                                                'school.classes.show',
-                                                $studentClass
-                                            ) }}"
-                                        >
-                                            {{ $studentClass->name }}
-                                        </a>
-
-                                    @else
-
-                                        <span class="text-muted">
-                                            Not assigned
-                                        </span>
-
-                                    @endif
-
-                                </td>
-
-
-                                {{-- Email --}}
-                                <td>
-
-                                    {{ $student->email }}
-
-                                </td>
-
-
-                                {{-- Status --}}
-                                <td>
-
-                                    @php
-                                        $status =
-                                            $student->pivot->status
-                                            ?? $student->status
-                                            ?? 'inactive';
-
-                                        $badgeClass =
-                                            match($status) {
-                                                'active'
-                                                    => 'badge-success',
-
-                                                'suspended'
-                                                    => 'badge-warning',
-
-                                                default
-                                                    => 'badge-danger',
-                                            };
-                                    @endphp
-
-                                    <span
-                                        class="badge {{ $badgeClass }}"
-                                    >
-                                        {{ ucfirst($status) }}
-                                    </span>
-
-                                </td>
-
-
-                                {{-- Actions --}}
-                                <td>
-
-                                    <div class="table-actions">
-
-                                        <a
-                                            href="{{ route(
-                                                'school.students.show',
-                                                $student
-                                            ) }}"
-                                            class="button button-secondary button-small"
-                                        >
-                                            View
-                                        </a>
-
-
-                                        <a
-                                            href="{{ route(
-                                                'school.students.edit',
-                                                $student
-                                            ) }}"
-                                            class="button button-ghost button-small"
-                                        >
-                                            Edit
-                                        </a>
-
-
-                                        @if(
-                                            ($student->pivot->status
-                                                ?? $student->status)
-                                            === 'active'
-                                        )
-
-                                            <form
-                                                method="POST"
-                                                action="{{ route(
-                                                    'school.students.destroy',
-                                                    $student
-                                                ) }}"
-                                            >
-
-                                                @csrf
-                                                @method('DELETE')
-
-                                                <button
-                                                    type="submit"
-                                                    class="button button-ghost button-small"
-                                                    data-confirm="Deactivate {{ $student->name }}?"
-                                                >
-                                                    Deactivate
-                                                </button>
-
-                                            </form>
+                                            <div class="directory-person__meta">
+                                                {{ $student->phone }}
+                                            </div>
 
                                         @endif
 
                                     </div>
 
-                                </td>
+                                </div>
 
-                            </tr>
+                            </td>
 
-                        @endforeach
 
-                    </tbody>
+                            {{-- Admission Number --}}
+                            <td>
+
+                                <span class="table-value">
+                                    {{ $student->pivot->reference_number ?? '—' }}
+                                </span>
+
+                            </td>
+
+
+                            {{-- Class --}}
+                            <td>
+
+                                @php
+                                    $studentClass =
+                                        $student
+                                            ->studentClasses
+                                            ->first();
+                                @endphp
+
+
+                                @if($studentClass)
+
+                                    <a
+                                        href="{{ route(
+                                            'school.classes.show',
+                                            $studentClass
+                                        ) }}"
+                                        class="table-link"
+                                    >
+                                        {{ $studentClass->name }}
+                                    </a>
+
+
+                                    @if($studentClass->pivot?->stream_id)
+
+                                        @php
+                                            $studentStream =
+                                                $studentClass
+                                                    ->streams
+                                                    ->firstWhere(
+                                                        'id',
+                                                        $studentClass
+                                                            ->pivot
+                                                            ->stream_id
+                                                    );
+                                        @endphp
+
+
+                                        @if($studentStream)
+
+                                            <span class="table-secondary">
+                                                {{ $studentStream->name }}
+                                            </span>
+
+                                        @endif
+
+                                    @endif
+
+                                @else
+
+                                    <span class="text-muted">
+                                        Not assigned
+                                    </span>
+
+                                @endif
+
+                            </td>
+
+
+                            {{-- Email --}}
+                            <td>
+
+                                <span class="table-email">
+                                    {{ $student->email }}
+                                </span>
+
+                            </td>
+
+
+                            {{-- Status --}}
+                            <td>
+
+                                @php
+                                    $status =
+                                        $student->pivot->status
+                                        ?? $student->status
+                                        ?? 'inactive';
+
+                                    $badgeClass =
+                                        match($status) {
+                                            'active'
+                                                => 'badge-success',
+
+                                            'suspended'
+                                                => 'badge-warning',
+
+                                            default
+                                                => 'badge-danger',
+                                        };
+                                @endphp
+
+
+                                <span
+                                    class="badge {{ $badgeClass }}"
+                                >
+                                    {{ ucfirst($status) }}
+                                </span>
+
+                            </td>
+
+
+                            {{-- Actions --}}
+                            <td>
+
+                                <div class="table-icon-actions">
+
+                                    {{-- View --}}
+                                    <a
+                                        href="{{ route(
+                                            'school.students.show',
+                                            $student
+                                        ) }}"
+                                        class="table-icon-button"
+                                        title="View student"
+                                        aria-label="View {{ $student->name }}"
+                                    >
+
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            aria-hidden="true"
+                                        >
+                                            <path
+                                                d="M2.25 12s3.5-6 9.75-6 9.75 6 9.75 6-3.5 6-9.75 6S2.25 12 2.25 12Z"
+                                            />
+                                            <circle
+                                                cx="12"
+                                                cy="12"
+                                                r="2.75"
+                                            />
+                                        </svg>
+
+                                    </a>
+
+
+                                    {{-- Edit --}}
+                                    <a
+                                        href="{{ route(
+                                            'school.students.edit',
+                                            $student
+                                        ) }}"
+                                        class="table-icon-button"
+                                        title="Edit student"
+                                        aria-label="Edit {{ $student->name }}"
+                                    >
+
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            aria-hidden="true"
+                                        >
+                                            <path
+                                                d="M13.5 6.5 17.5 10.5"
+                                            />
+                                            <path
+                                                d="M4 20l4.25-1 9.8-9.8a2 2 0 0 0 0-2.82l-.43-.43a2 2 0 0 0-2.82 0L5 14.75 4 20Z"
+                                            />
+                                        </svg>
+
+                                    </a>
+
+
+                                    {{-- Deactivate --}}
+                                    @if(
+                                        ($student->pivot->status
+                                            ?? $student->status)
+                                        === 'active'
+                                    )
+
+                                        <form
+                                            method="POST"
+                                            action="{{ route(
+                                                'school.students.destroy',
+                                                $student
+                                            ) }}"
+                                            class="table-icon-form"
+                                        >
+
+                                            @csrf
+                                            @method('DELETE')
+
+
+                                            <button
+                                                type="submit"
+                                                class="table-icon-button table-icon-button--danger"
+                                                title="Deactivate student"
+                                                aria-label="Deactivate {{ $student->name }}"
+                                                data-confirm="Deactivate {{ $student->name }}?"
+                                            >
+
+                                                <svg
+                                                    viewBox="0 0 24 24"
+                                                    aria-hidden="true"
+                                                >
+                                                    <circle
+                                                        cx="12"
+                                                        cy="12"
+                                                        r="9"
+                                                    />
+                                                    <path
+                                                        d="M8 12h8"
+                                                    />
+                                                </svg>
+
+                                            </button>
+
+                                        </form>
+
+                                    @endif
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    @endforeach
+
+                </tbody>
 
                 </table>
 
