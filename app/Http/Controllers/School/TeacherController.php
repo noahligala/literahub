@@ -36,18 +36,101 @@ class TeacherController extends Controller
     {
         $school = $this->school($request);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Base Teacher Query
+        |--------------------------------------------------------------------------
+        */
+
+        $teacherQuery = $school
+            ->users()
+            ->wherePivot('role', 'teacher');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Metrics
+        |--------------------------------------------------------------------------
+        */
+
+        $totalTeachers = (clone $teacherQuery)
+            ->count();
+
+        $activeTeachers = (clone $teacherQuery)
+            ->wherePivot('status', 'active')
+            ->count();
+
+        $classesAssigned = $school
+            ->classes()
+            ->whereHas('teachers')
+            ->count();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Search
+        |--------------------------------------------------------------------------
+        */
+
+        $search = trim(
+            (string) $request->query(
+                'search',
+                ''
+            )
+        );
+
+
         $teachers = $school
             ->users()
             ->wherePivot('role', 'teacher')
             ->with('teachingClasses')
+            ->when(
+                $search !== '',
+                function ($query) use ($search) {
+
+                    $query->where(
+                        function ($query) use ($search) {
+
+                            $query
+                                ->where(
+                                    'users.name',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'users.email',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'users.phone',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'school_user.reference_number',
+                                    'like',
+                                    "%{$search}%"
+                                );
+
+                        }
+                    );
+
+                }
+            )
             ->orderBy('users.name')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
+
 
         return view(
             'school.teachers.index',
             compact(
                 'school',
-                'teachers'
+                'teachers',
+                'totalTeachers',
+                'activeTeachers',
+                'classesAssigned'
             )
         );
     }

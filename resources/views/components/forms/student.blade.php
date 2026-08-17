@@ -7,12 +7,17 @@
 @php
     $editing = !is_null($student);
 
+    $studentClass = $editing
+        ? $student
+            ->studentClasses
+            ->first()
+        : null;
+
     $currentClass =
-        $editing
-            ? $student
-                ->studentClasses
-                ->first()?->id
-            : null;
+        $studentClass?->id;
+
+    $currentStream =
+        $studentClass?->pivot?->stream_id;
 
     $membership =
         $editing
@@ -30,7 +35,10 @@
 <div class="form-grid">
 
 
-    {{-- Student Name --}}
+    {{-- =====================================================
+         Student Name
+         ===================================================== --}}
+
     <div class="form-group">
 
         <label for="name">
@@ -46,21 +54,23 @@
                 $student?->name
             ) }}"
             placeholder="Enter full name"
+            autocomplete="name"
             required
         >
 
         @error('name')
-
             <div class="field-error">
                 {{ $message }}
             </div>
-
         @enderror
 
     </div>
 
 
-    {{-- Admission Number --}}
+    {{-- =====================================================
+         Admission Number
+         ===================================================== --}}
+
     <div class="form-group">
 
         <label for="admission_number">
@@ -80,17 +90,18 @@
         >
 
         @error('admission_number')
-
             <div class="field-error">
                 {{ $message }}
             </div>
-
         @enderror
 
     </div>
 
 
-    {{-- Email --}}
+    {{-- =====================================================
+         Email
+         ===================================================== --}}
+
     <div class="form-group">
 
         <label for="email">
@@ -111,17 +122,18 @@
         >
 
         @error('email')
-
             <div class="field-error">
                 {{ $message }}
             </div>
-
         @enderror
 
     </div>
 
 
-    {{-- Phone --}}
+    {{-- =====================================================
+         Phone
+         ===================================================== --}}
+
     <div class="form-group">
 
         <label for="phone">
@@ -137,20 +149,22 @@
                 $student?->phone
             ) }}"
             placeholder="+254..."
+            autocomplete="tel"
         >
 
         @error('phone')
-
             <div class="field-error">
                 {{ $message }}
             </div>
-
         @enderror
 
     </div>
 
 
-    {{-- Class --}}
+    {{-- =====================================================
+         Class
+         ===================================================== --}}
+
     <div class="form-group">
 
         <label for="school_class_id">
@@ -160,6 +174,7 @@
         <select
             id="school_class_id"
             name="school_class_id"
+            data-student-class-select
         >
 
             <option value="">
@@ -178,24 +193,95 @@
                     )
                 >
                     {{ $class->name }}
+
+                    @if($class->academic_year)
+                        — {{ $class->academic_year }}
+                    @endif
                 </option>
 
             @endforeach
 
         </select>
 
-        @error('school_class_id')
+        <div class="field-help">
+            A student may belong to a class without
+            being assigned to a stream.
+        </div>
 
+        @error('school_class_id')
             <div class="field-error">
                 {{ $message }}
             </div>
-
         @enderror
 
     </div>
 
 
-    {{-- Status --}}
+    {{-- =====================================================
+         Stream
+         ===================================================== --}}
+
+    <div class="form-group">
+
+        <label for="stream_id">
+            Stream
+        </label>
+
+        <select
+            id="stream_id"
+            name="stream_id"
+            data-student-stream-select
+        >
+
+            <option
+                value=""
+                data-class-id=""
+            >
+                No Stream Assigned
+            </option>
+
+            @foreach($classes as $class)
+
+                @foreach($class->streams as $stream)
+
+                    <option
+                        value="{{ $stream->id }}"
+                        data-class-id="{{ $class->id }}"
+                        @selected(
+                            old(
+                                'stream_id',
+                                $currentStream
+                            ) == $stream->id
+                        )
+                    >
+                        {{ $class->name }}
+                        — {{ $stream->name }}
+                    </option>
+
+                @endforeach
+
+            @endforeach
+
+        </select>
+
+        <div class="field-help">
+            Optional. Streams are filtered according
+            to the selected class.
+        </div>
+
+        @error('stream_id')
+            <div class="field-error">
+                {{ $message }}
+            </div>
+        @enderror
+
+    </div>
+
+
+    {{-- =====================================================
+         Status
+         ===================================================== --}}
+
     <div class="form-group">
 
         <label for="status">
@@ -231,17 +317,18 @@
         </select>
 
         @error('status')
-
             <div class="field-error">
                 {{ $message }}
             </div>
-
         @enderror
 
     </div>
 
 
-    {{-- Password --}}
+    {{-- =====================================================
+         Password
+         ===================================================== --}}
+
     <div class="form-group">
 
         <label for="password">
@@ -268,17 +355,18 @@
         @endif
 
         @error('password')
-
             <div class="field-error">
                 {{ $message }}
             </div>
-
         @enderror
 
     </div>
 
 
-    {{-- Confirm Password --}}
+    {{-- =====================================================
+         Password Confirmation
+         ===================================================== --}}
+
     <div class="form-group">
 
         <label for="password_confirmation">
@@ -296,3 +384,94 @@
     </div>
 
 </div>
+
+
+{{-- =========================================================
+     Class / Stream filtering
+     ========================================================= --}}
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const classSelect = document.querySelector(
+            '[data-student-class-select]'
+        );
+
+        const streamSelect = document.querySelector(
+            '[data-student-stream-select]'
+        );
+
+        if (!classSelect || !streamSelect) {
+            return;
+        }
+
+        const filterStreams = () => {
+
+            const selectedClass =
+                classSelect.value;
+
+            const currentStream =
+                streamSelect.value;
+
+            let selectedStillAvailable = false;
+
+            Array.from(
+                streamSelect.options
+            ).forEach((option) => {
+
+                /*
+                 * Always display the
+                 * "No Stream Assigned" option.
+                 */
+                if (!option.value) {
+                    option.hidden = false;
+                    option.disabled = false;
+
+                    return;
+                }
+
+                const streamClass =
+                    option.dataset.classId;
+
+                const visible =
+                    selectedClass !== ''
+                    && streamClass === selectedClass;
+
+                option.hidden = !visible;
+                option.disabled = !visible;
+
+                if (
+                    visible
+                    && option.value === currentStream
+                ) {
+                    selectedStillAvailable = true;
+                }
+
+            });
+
+            /*
+             * Remove an old stream selection when
+             * the user changes to another class.
+             */
+            if (!selectedStillAvailable) {
+                streamSelect.value = '';
+            }
+
+            /*
+             * A stream cannot be selected when
+             * no class is selected.
+             */
+            streamSelect.disabled =
+                selectedClass === '';
+        };
+
+
+        classSelect.addEventListener(
+            'change',
+            filterStreams
+        );
+
+        filterStreams();
+
+    });
+</script>

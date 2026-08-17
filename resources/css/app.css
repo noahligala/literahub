@@ -3073,3 +3073,189 @@ html[data-theme="dark"] .form-card__header {
     border-color:
         var(--color-border);
 }
+
+/* =========================================================
+   Library
+   ========================================================= */
+
+.library-toolbar {
+    width: 100%;
+}
+
+.library-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+
+    gap: 10px;
+}
+
+.library-resource-card {
+    min-width: 0;
+
+    overflow: hidden;
+
+    background:
+        var(--color-surface);
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius:
+        var(--radius-lg);
+
+    box-shadow:
+        var(--shadow-sm);
+
+    transition:
+        transform var(--transition-fast),
+        box-shadow var(--transition-fast),
+        border-color var(--transition-fast);
+}
+
+.library-resource-card:hover {
+    transform:
+        translateY(-2px);
+
+    border-color:
+        var(--brand-200);
+
+    box-shadow:
+        var(--shadow-md);
+}
+
+.library-resource-card__cover {
+    aspect-ratio: 16 / 10;
+
+    overflow: hidden;
+
+    background:
+        var(--color-surface-soft);
+}
+
+.library-resource-card__cover img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+}
+
+.library-resource-placeholder {
+    width: 100%;
+    height: 100%;
+
+    display: grid;
+
+    place-items: center;
+
+    background:
+        linear-gradient(
+            145deg,
+            var(--brand-900),
+            var(--accent-500)
+        );
+
+    color: #ffffff;
+
+    font-size: 1.5rem;
+    font-weight: 900;
+}
+
+.library-resource-card__body {
+    padding: 11px;
+}
+
+.library-resource-card__meta {
+    margin-bottom: 7px;
+}
+
+.library-resource-card__body h3 {
+    margin-bottom: 3px;
+}
+
+.library-resource-card__body p {
+    margin-bottom: 7px;
+}
+
+.resource-description {
+    display: -webkit-box;
+
+    overflow: hidden;
+
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.library-resource-card__actions {
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    margin-top: 10px;
+}
+
+
+/* =========================================================
+   Reports
+   ========================================================= */
+
+.report-filter-card {
+    width: 100%;
+}
+
+
+/* =========================================================
+   Tablet Library
+   ========================================================= */
+
+@media (min-width: 640px) {
+
+    .library-grid {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+
+}
+
+
+/* =========================================================
+   Desktop Library
+   ========================================================= */
+
+@media (min-width: 1024px) {
+
+    .library-grid {
+        grid-template-columns:
+            repeat(
+                4,
+                minmax(0, 1fr)
+            );
+    }
+
+}
+/* =========================================================
+   Teacher Directory
+   ========================================================= */
+
+.teacher-class-list {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    align-items: center;
+
+    gap: 4px;
+
+    min-width: 130px;
+}
+
+.teacher-class-list .badge {
+    white-space: nowrap;
+}

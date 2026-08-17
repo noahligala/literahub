@@ -1,8 +1,21 @@
 <x-layouts.dashboard title="Edit Class — LiteraHub">
 
-    <h1>
-        Edit {{ $class->name }}
-    </h1>
+    <div class="dashboard-heading">
+
+        <div>
+
+            <span class="eyebrow">
+                Academic Structure
+            </span>
+
+            <h1>
+                Edit {{ $class->name }}
+            </h1>
+
+        </div>
+
+    </div>
+
 
     <form
         method="POST"
@@ -10,18 +23,24 @@
             'school.classes.update',
             $class
         ) }}"
-        class="card"
+        class="card form-card"
     >
+
         @csrf
         @method('PUT')
 
-        @include(
-            'school.classes._form'
-        )
 
-        <div class="actions">
+        <x-forms.school-class
+            :class="$class"
+        />
 
-            <button class="button">
+
+        <div class="form-actions">
+
+            <button
+                type="submit"
+                class="button"
+            >
                 Save Changes
             </button>
 

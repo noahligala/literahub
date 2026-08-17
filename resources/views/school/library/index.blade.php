@@ -13,153 +13,124 @@
             </h1>
 
             <p>
-                Browse literature and learning resources
-                available under your institution's subscription.
+                Browse resources available under your
+                institution's subscription.
             </p>
 
         </div>
 
     </div>
 
-    <div class="card">
 
-        <div class="row">
+    <div class="card library-toolbar">
 
-            <div style="flex: 1;">
-                <input
-                    type="search"
-                    placeholder="Search books, authors or topics..."
+        <form
+            method="GET"
+            action="{{ route('school.library.index') }}"
+        >
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label for="search">
+                        Search Library
+                    </label>
+
+                    <input
+                        id="search"
+                        type="search"
+                        name="search"
+                        value="{{ request('search') }}"
+                        placeholder="Title, author or keyword..."
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="category">
+                        Category
+                    </label>
+
+                    <select
+                        id="category"
+                        name="category"
+                    >
+
+                        <option value="">
+                            All Categories
+                        </option>
+
+                        <option>Literature</option>
+                        <option>Novel</option>
+                        <option>Drama</option>
+                        <option>Poetry</option>
+                        <option>Study Guide</option>
+                        <option>Reference</option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <div class="form-actions">
+
+                <button class="button">
+                    Search
+                </button>
+
+                <a
+                    href="{{ route(
+                        'school.library.index'
+                    ) }}"
+                    class="button button-secondary"
                 >
+                    Reset
+                </a>
+
             </div>
 
-            <div style="width: min(100%, 180px);">
-                <select>
-                    <option value="">
-                        All Categories
-                    </option>
+        </form>
 
-                    <option>Literature</option>
-                    <option>Poetry</option>
-                    <option>Drama</option>
-                    <option>Novels</option>
-                    <option>Study Guides</option>
-                    <option>Reference</option>
-                </select>
-            </div>
+    </div>
+
+
+    <div style="height: 14px;"></div>
+
+
+    @if(isset($resources) && $resources->count())
+
+        <div class="library-grid">
+
+            @foreach($resources as $resource)
+
+                <x-library.resource-card
+                    :resource="$resource"
+                />
+
+            @endforeach
 
         </div>
 
-    </div>
+    @else
 
-    <div style="height: 14px;"></div>
-
-    <div class="metric-grid">
-
-        <article>
-            <strong>0</strong>
-            <span>Available Titles</span>
-        </article>
-
-        <article>
-            <strong>0</strong>
-            <span>Study Guides</span>
-        </article>
-
-        <article>
-            <strong>0</strong>
-            <span>Recently Added</span>
-        </article>
-
-    </div>
-
-    <div style="height: 14px;"></div>
-
-    <section class="cards">
-
-        <article>
-
-            <span class="eyebrow">
-                Literature
-            </span>
+        <div class="empty-state">
 
             <h3>
-                Browse Books
+                No resources found
             </h3>
 
             <p>
-                Explore approved literary works
-                available to your institution.
+                Available LiteraHub resources will
+                appear here.
             </p>
 
-            <button class="button button-secondary button-small">
-                Browse
-            </button>
+        </div>
 
-        </article>
-
-        <article>
-
-            <span class="eyebrow">
-                Academic Support
-            </span>
-
-            <h3>
-                Study Guides
-            </h3>
-
-            <p>
-                Access study notes, analysis,
-                summaries and revision materials.
-            </p>
-
-            <button class="button button-secondary button-small">
-                View Guides
-            </button>
-
-        </article>
-
-        <article>
-
-            <span class="eyebrow">
-                Teaching
-            </span>
-
-            <h3>
-                Teacher Resources
-            </h3>
-
-            <p>
-                Discover classroom resources and
-                supporting teaching material.
-            </p>
-
-            <button class="button button-secondary button-small">
-                View Resources
-            </button>
-
-        </article>
-
-        <article>
-
-            <span class="eyebrow">
-                New Content
-            </span>
-
-            <h3>
-                Recently Added
-            </h3>
-
-            <p>
-                Review newly published resources
-                available to your school.
-            </p>
-
-            <button class="button button-secondary button-small">
-                Explore
-            </button>
-
-        </article>
-
-    </section>
+    @endif
 
 </x-layouts.dashboard>

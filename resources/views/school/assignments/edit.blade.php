@@ -1,41 +1,55 @@
-<x-layouts.dashboard title="Create Assignment — LiteraHub">
+<x-layouts.dashboard title="Edit Assignment — LiteraHub">
 
     <div class="dashboard-heading">
 
         <div>
+
             <span class="eyebrow">
-                Academic Activity
+                Assignment
             </span>
 
             <h1>
-                Create Assignment
+                Edit {{ $assignment->title }}
             </h1>
+
         </div>
 
     </div>
 
+
     <form
         method="POST"
         action="{{ route(
-            'school.assignments.store'
+            'school.assignments.update',
+            $assignment
         ) }}"
-        class="card"
+        class="card form-card"
     >
+
         @csrf
+        @method('PUT')
 
-        @include(
-            'school.assignments._form'
-        )
 
-        <div class="actions">
+        <x-forms.assignment
+            :assignment="$assignment"
+            :classes="$classes"
+            :resources="$resources ?? collect()"
+        />
 
-            <button class="button">
-                Create Assignment
+
+        <div class="form-actions">
+
+            <button
+                type="submit"
+                class="button"
+            >
+                Save Changes
             </button>
 
             <a
                 href="{{ route(
-                    'school.assignments.index'
+                    'school.assignments.show',
+                    $assignment
                 ) }}"
                 class="button button-secondary"
             >

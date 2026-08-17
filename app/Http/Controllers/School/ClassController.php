@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\School;
 
+use App\Models\Stream;
 use App\Http\Controllers\Controller;
 use App\Models\School;
 use App\Models\SchoolClass;
@@ -34,6 +35,58 @@ class ClassController extends Controller
     {
         $school = $this->school($request);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Filters
+        |--------------------------------------------------------------------------
+        */
+
+        $search = trim(
+            (string) $request->query('search', '')
+        );
+
+        $status = $request->query('status');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Dashboard Metrics
+        |--------------------------------------------------------------------------
+        */
+
+        $totalClasses = $school
+            ->classes()
+            ->count();
+
+
+        $activeStudents = $school
+            ->users()
+            ->wherePivot('role', 'student')
+            ->wherePivot('status', 'active')
+            ->count();
+
+
+        $teachersAssigned = $school
+            ->users()
+            ->wherePivot('role', 'teacher')
+            ->whereHas(
+                'teachingClasses',
+                function ($query) use ($school) {
+                    $query->where(
+                        'school_classes.school_id',
+                        $school->id
+                    );
+                }
+            )
+            ->count();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Classes
+        |--------------------------------------------------------------------------
+        */
+
         $classes = $school
             ->classes()
             ->withCount([
@@ -42,14 +95,96 @@ class ClassController extends Controller
                 'streams',
                 'assignments',
             ])
+            ->when(
+                $search !== '',
+                function ($query) use ($search) {
+                    $query->where(
+                        function ($query) use ($search) {
+                            $query
+                                ->where(
+                                    'name',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'code',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'level',
+                                    'like',
+                                    "%{$search}%"
+                                )
+                                ->orWhere(
+                                    'academic_year',
+                                    'like',
+                                    "%{$search}%"
+                                );
+                        }
+                    );
+                }
+            )
+            ->when(
+                in_array(
+                    $status,
+                    [
+                        'active',
+                        'inactive',
+                    ],
+                    true
+                ),
+                function ($query) use ($status) {
+                    $query->where(
+                        'status',
+                        $status
+                    );
+                }
+            )
             ->orderBy('name')
-            ->paginate(20);
+            ->paginate(12)
+            ->withQueryString();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Streams
+        |--------------------------------------------------------------------------
+        */
+
+        $streams = Stream::query()
+            ->whereHas(
+                'schoolClass',
+                function ($query) use ($school) {
+                    $query->where(
+                        'school_id',
+                        $school->id
+                    );
+                }
+            )
+            ->with([
+                'schoolClass',
+                'teacher',
+            ])
+            ->orderBy('name')
+            ->get();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | View
+        |--------------------------------------------------------------------------
+        */
 
         return view(
             'school.classes.index',
             compact(
                 'school',
-                'classes'
+                'classes',
+                'streams',
+                'totalClasses',
+                'activeStudents',
+                'teachersAssigned'
             )
         );
     }
