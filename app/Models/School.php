@@ -31,15 +31,16 @@ class School extends Model
         ];
     }
 
-    public function users(): BelongsToMany
+     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)
             ->withPivot([
                 'role',
                 'status',
+                'reference_number',
             ])
             ->withTimestamps();
-    }
+        }
 
     public function subscriptions(): HasMany
     {
@@ -65,5 +66,15 @@ class School extends Model
         return $this->users()
             ->wherePivot('role', 'student')
             ->wherePivot('status', 'active');
+    }
+
+    public function classes(): HasMany
+    {
+        return $this->hasMany(SchoolClass::class);
+    }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(Assignment::class);
     }
 }

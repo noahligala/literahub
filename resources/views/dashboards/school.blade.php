@@ -251,7 +251,7 @@
                 </p>
 
                 <a
-                    href="{{ route('school.profile') }}"
+                    href="{{ route('school.profile.show') }}"
                     class="button button-secondary button-small"
                 >
                     View Profile

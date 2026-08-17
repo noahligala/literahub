@@ -5,11 +5,28 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Permission Cache
+        |--------------------------------------------------------------------------
+        */
+
+        app(PermissionRegistrar::class)
+            ->forgetCachedPermissions();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Permissions
+        |--------------------------------------------------------------------------
+        */
+
         $permissions = [
             'manage platform',
             'manage schools',
@@ -30,6 +47,13 @@ class RolePermissionSeeder extends Seeder
                 'guard_name' => 'web',
             ]);
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Roles
+        |--------------------------------------------------------------------------
+        */
 
         $superAdmin = Role::firstOrCreate([
             'name' => 'super_admin',
@@ -81,7 +105,19 @@ class RolePermissionSeeder extends Seeder
             'guard_name' => 'web',
         ]);
 
-        $superAdmin->syncPermissions(Permission::all());
+
+        /*
+        |--------------------------------------------------------------------------
+        | Assign Permissions
+        |--------------------------------------------------------------------------
+        */
+
+        $superAdmin->syncPermissions(
+            Permission::where(
+                'guard_name',
+                'web'
+            )->get()
+        );
 
         $platformAdmin->syncPermissions([
             'manage schools',
@@ -95,6 +131,10 @@ class RolePermissionSeeder extends Seeder
         $contentManager->syncPermissions([
             'manage resources',
             'publish resources',
+        ]);
+
+        $author->syncPermissions([
+            'manage resources',
         ]);
 
         $schoolAdmin->syncPermissions([
@@ -124,5 +164,19 @@ class RolePermissionSeeder extends Seeder
             'manage payments',
             'view reports',
         ]);
+
+        $support->syncPermissions([
+            'manage users',
+        ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Permission Cache Again
+        |--------------------------------------------------------------------------
+        */
+
+        app(PermissionRegistrar::class)
+            ->forgetCachedPermissions();
     }
 }

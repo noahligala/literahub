@@ -29,28 +29,137 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Fortify::createUsersUsing(CreateNewUser::class);
-        Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
-        Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
-        Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
-        Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
+        /*
+        |--------------------------------------------------------------------------
+        | Fortify Actions
+        |--------------------------------------------------------------------------
+        */
+
+        Fortify::createUsersUsing(
+            CreateNewUser::class
+        );
+
+        Fortify::updateUserProfileInformationUsing(
+            UpdateUserProfileInformation::class
+        );
+
+        Fortify::updateUserPasswordsUsing(
+            UpdateUserPassword::class
+        );
+
+        Fortify::resetUserPasswordsUsing(
+            ResetUserPassword::class
+        );
+
+        Fortify::redirectUserForTwoFactorAuthenticationUsing(
+            RedirectIfTwoFactorAuthenticatable::class
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Authentication Views
+        |--------------------------------------------------------------------------
+        |
+        | Fortify provides the authentication routes/controllers but does not
+        | provide LiteraHub's frontend. These callbacks tell Fortify which
+        | Blade views to render.
+        |
+        */
+
+        Fortify::loginView(function () {
+            return view('auth.login');
+        });
+
+        Fortify::requestPasswordResetLinkView(function () {
+            return view('auth.forgot-password');
+        });
+
+        Fortify::resetPasswordView(function (Request $request) {
+            return view('auth.reset-password', [
+                'request' => $request,
+            ]);
+        });
+
+        Fortify::confirmPasswordView(function () {
+            return view('auth.confirm-password');
+        });
+
+        Fortify::twoFactorChallengeView(function () {
+            return view('auth.two-factor-challenge');
+        });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Login Rate Limiter
+        |--------------------------------------------------------------------------
+        */
 
         RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
 
-            return Limit::perMinute(5)->by($throttleKey);
-        });
-
-        RateLimiter::for('two-factor', function (Request $request) {
-            return Limit::perMinute(5)->by($request->session()->get('login.id'));
-        });
-
-        RateLimiter::for('passkeys', function (Request $request) {
-            $credentialId = $request->input('credential.id');
-
-            return Limit::perMinute(10)->by(
-                ($credentialId ?: $request->session()->getId()).'|'.$request->ip()
+            $throttleKey = Str::transliterate(
+                Str::lower(
+                    $request->input(
+                        Fortify::username()
+                    )
+                )
+                .'|'.
+                $request->ip()
             );
+
+            return Limit::perMinute(5)
+                ->by($throttleKey);
         });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Two-Factor Authentication Rate Limiter
+        |--------------------------------------------------------------------------
+        */
+
+        RateLimiter::for(
+            'two-factor',
+            function (Request $request) {
+
+                return Limit::perMinute(5)
+                    ->by(
+                        $request
+                            ->session()
+                            ->get('login.id')
+                    );
+            }
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Passkey Rate Limiter
+        |--------------------------------------------------------------------------
+        */
+
+        RateLimiter::for(
+            'passkeys',
+            function (Request $request) {
+
+                $credentialId =
+                    $request->input(
+                        'credential.id'
+                    );
+
+                return Limit::perMinute(10)
+                    ->by(
+                        (
+                            $credentialId
+                            ?: $request
+                                ->session()
+                                ->getId()
+                        )
+                        .'|'.
+                        $request->ip()
+                    );
+            }
+        );
     }
 }

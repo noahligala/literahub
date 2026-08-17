@@ -43,6 +43,7 @@ class User extends Authenticatable
             ->withPivot([
                 'role',
                 'status',
+                'reference_number',
             ])
             ->withTimestamps();
     }
@@ -80,5 +81,30 @@ class User extends Authenticatable
             'student',
             'individual_subscriber',
         ]);
+    }
+
+    public function studentClasses(): BelongsToMany
+    {
+        return $this
+            ->belongsToMany(
+                SchoolClass::class,
+                'class_student',
+                'user_id',
+                'school_class_id'
+            )
+            ->withPivot('stream_id')
+            ->withTimestamps();
+    }
+
+    public function teachingClasses(): BelongsToMany
+    {
+        return $this
+            ->belongsToMany(
+                SchoolClass::class,
+                'class_teacher',
+                'user_id',
+                'school_class_id'
+            )
+            ->withTimestamps();
     }
 }
