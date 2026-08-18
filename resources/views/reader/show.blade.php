@@ -92,6 +92,30 @@
 
         <div class="reader-toolbar">
 
+            <div class="reader-toolbar__left">
+
+                <button
+                    type="button"
+                    class="reader-tool reader-tool--contents"
+                    data-toc-toggle
+                    aria-expanded="false"
+                    aria-controls="reader-contents"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <path d="M4 6h16"/>
+                        <path d="M4 12h16"/>
+                        <path d="M4 18h16"/>
+                    </svg>
+
+                    Contents
+                </button>
+
+            </div>
+
+
             <div class="reader-navigation">
 
                 <button
@@ -204,60 +228,132 @@
 
 
         {{-- ================================================================
-             VIEWER
+             READER CONTENT
         ================================================================= --}}
 
-        <main class="reader-workspace">
-
-            <div
-                class="reader-loading"
-                data-reader-loading
-            >
-
-                <div class="reader-spinner"></div>
-
-                <strong>
-                    Loading book…
-                </strong>
-
-                <span>
-                    Preparing the protected reader.
-                </span>
-
-            </div>
+        <div class="reader-content">
 
 
-            <div
-                class="reader-error"
-                data-reader-error
+            {{-- ============================================================
+                 TABLE OF CONTENTS
+            ============================================================= --}}
+
+            <aside
+                id="reader-contents"
+                class="reader-toc"
+                data-reader-toc
                 hidden
             >
 
-                <strong>
-                    Unable to load this book.
-                </strong>
+                <div class="reader-toc__header">
 
-                <p>
-                    Refresh the page or verify that your
-                    access licence is still active.
-                </p>
+                    <div>
 
-            </div>
+                        <span class="eyebrow">
+                            Navigation
+                        </span>
+
+                        <h2>
+                            Contents
+                        </h2>
+
+                    </div>
 
 
-            <div
-                class="reader-stage"
-                data-reader-stage
-                hidden
-            >
+                    <button
+                        type="button"
+                        class="reader-toc__close"
+                        data-toc-close
+                        aria-label="Close contents"
+                    >
+                        ×
+                    </button>
 
-                <canvas
-                    data-pdf-canvas
-                ></canvas>
+                </div>
 
-            </div>
 
-        </main>
+                <div class="reader-toc__body">
+
+                    <div
+                        class="reader-toc__loading"
+                        data-toc-loading
+                    >
+
+                        <div class="reader-toc__spinner"></div>
+
+                        <span>
+                            Loading contents…
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        data-toc-body
+                    ></div>
+
+                </div>
+
+            </aside>
+
+
+            {{-- ============================================================
+                 VIEWER
+            ============================================================= --}}
+
+            <main class="reader-workspace">
+
+                <div
+                    class="reader-loading"
+                    data-reader-loading
+                >
+
+                    <div class="reader-spinner"></div>
+
+                    <strong>
+                        Loading book…
+                    </strong>
+
+                    <span>
+                        Preparing the protected reader.
+                    </span>
+
+                </div>
+
+
+                <div
+                    class="reader-error"
+                    data-reader-error
+                    hidden
+                >
+
+                    <strong>
+                        Unable to load this book.
+                    </strong>
+
+                    <p>
+                        Refresh the page or verify that your
+                        access licence is still active.
+                    </p>
+
+                </div>
+
+
+                <div
+                    class="reader-stage"
+                    data-reader-stage
+                    hidden
+                >
+
+                    <canvas
+                        data-pdf-canvas
+                    ></canvas>
+
+                </div>
+
+            </main>
+
+        </div>
 
 
         {{-- ================================================================
@@ -277,7 +373,12 @@
     </div>
 
 
+    {{-- ====================================================================
+         BOOKMARK PAGE SYNCHRONISATION
+    ===================================================================== --}}
+
     <script>
+
         document.addEventListener(
             'DOMContentLoaded',
             () => {
@@ -287,36 +388,45 @@
                         '[data-pdf-reader]'
                     );
 
+
                 const bookmarkPage =
                     document.querySelector(
                         '[data-bookmark-page]'
                     );
 
 
-                if (
-                    !reader
-                    || !bookmarkPage
-                ) {
+                if (!reader) {
                     return;
                 }
 
 
-                reader.addEventListener(
-                    'literahub:page-changed',
-                    event => {
+                if (bookmarkPage) {
 
-                        bookmarkPage.value =
-                            event.detail.page;
+                    reader.addEventListener(
+                        'literahub:page-changed',
+                        event => {
 
-                    }
-                );
+                            bookmarkPage.value =
+                                event.detail.page;
+
+                        }
+                    );
+
+                }
 
             }
         );
+
     </script>
 
 
     <style>
+
+        /*
+        |--------------------------------------------------------------------------
+        | Reader Shell
+        |--------------------------------------------------------------------------
+        */
 
         .reader-shell {
             display: flex;
@@ -326,225 +436,1085 @@
             background: var(--color-surface-soft);
         }
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Header
+        |--------------------------------------------------------------------------
+        */
+
         .reader-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 20px;
-            padding: 12px 18px;
-            border-bottom: 1px solid var(--color-border);
-            background: var(--color-surface);
+
+            padding:
+                12px
+                18px;
+
+            border-bottom:
+                1px solid
+                var(--color-border);
+
+            background:
+                var(--color-surface);
         }
+
 
         .reader-title {
             display: flex;
             align-items: center;
+
             gap: 10px;
+
             min-width: 0;
         }
+
 
         .reader-back {
             width: 32px;
             height: 32px;
-            flex: 0 0 32px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-md);
-            color: var(--color-text);
-            text-decoration: none;
+
+            flex:
+                0 0
+                32px;
+
+            display:
+                inline-flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            border:
+                1px solid
+                var(--color-border);
+
+            border-radius:
+                var(--radius-md);
+
+            color:
+                var(--color-text);
+
+            text-decoration:
+                none;
         }
+
+
+        .reader-back:hover {
+            border-color:
+                var(--brand-300);
+
+            background:
+                var(--color-surface-soft);
+        }
+
 
         .reader-title > div {
             min-width: 0;
         }
 
+
         .reader-title span {
-            color: var(--color-primary);
-            font-size: .52rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: .08em;
+            color:
+                var(--color-primary);
+
+            font-size:
+                .52rem;
+
+            font-weight:
+                800;
+
+            text-transform:
+                uppercase;
+
+            letter-spacing:
+                .08em;
         }
+
 
         .reader-title h1 {
-            overflow: hidden;
-            margin: 1px 0;
-            color: var(--color-text);
-            font-size: .78rem;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            overflow:
+                hidden;
+
+            margin:
+                1px 0;
+
+            color:
+                var(--color-text);
+
+            font-size:
+                .78rem;
+
+            text-overflow:
+                ellipsis;
+
+            white-space:
+                nowrap;
         }
+
 
         .reader-title p {
-            overflow: hidden;
-            margin: 0;
-            color: var(--color-text-muted);
-            font-size: .53rem;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            overflow:
+                hidden;
+
+            margin:
+                0;
+
+            color:
+                var(--color-text-muted);
+
+            font-size:
+                .53rem;
+
+            text-overflow:
+                ellipsis;
+
+            white-space:
+                nowrap;
         }
+
 
         .reader-actions {
-            display: flex;
-            gap: 6px;
+            display:
+                flex;
+
+            gap:
+                6px;
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Toolbar
+        |--------------------------------------------------------------------------
+        */
 
         .reader-toolbar {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 18px;
-            min-height: 48px;
-            padding: 7px 15px;
-            border-bottom: 1px solid var(--color-border);
-            background: var(--color-surface);
+            position:
+                relative;
+
+            z-index:
+                8;
+
+            display:
+                grid;
+
+            grid-template-columns:
+                1fr
+                auto
+                1fr;
+
+            align-items:
+                center;
+
+            gap:
+                16px;
+
+            min-height:
+                48px;
+
+            padding:
+                7px
+                15px;
+
+            border-bottom:
+                1px solid
+                var(--color-border);
+
+            background:
+                var(--color-surface);
         }
 
-        .reader-navigation,
-        .reader-zoom {
-            display: flex;
-            align-items: center;
-            gap: 6px;
+
+        .reader-toolbar__left {
+            display:
+                flex;
+
+            justify-content:
+                flex-start;
         }
+
+
+        .reader-navigation {
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            gap:
+                6px;
+        }
+
+
+        .reader-zoom {
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                flex-end;
+
+            gap:
+                6px;
+        }
+
+
+        .reader-bookmark {
+            display:
+                flex;
+
+            justify-content:
+                flex-end;
+        }
+
 
         .reader-tool {
-            min-height: 29px;
-            padding: 0 9px;
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-sm);
-            background: var(--color-surface);
-            color: var(--color-text);
-            font-size: .56rem;
-            font-weight: 700;
-            cursor: pointer;
+            min-height:
+                29px;
+
+            display:
+                inline-flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            gap:
+                5px;
+
+            padding:
+                0 9px;
+
+            border:
+                1px solid
+                var(--color-border);
+
+            border-radius:
+                var(--radius-sm);
+
+            background:
+                var(--color-surface);
+
+            color:
+                var(--color-text);
+
+            font-size:
+                .56rem;
+
+            font-weight:
+                700;
+
+            cursor:
+                pointer;
         }
+
 
         .reader-tool:hover:not(:disabled) {
-            border-color: var(--brand-300);
-            background: var(--color-surface-soft);
+            border-color:
+                var(--brand-300);
+
+            background:
+                var(--color-surface-soft);
         }
+
 
         .reader-tool:disabled {
-            cursor: not-allowed;
-            opacity: .45;
+            cursor:
+                not-allowed;
+
+            opacity:
+                .45;
         }
+
 
         .reader-tool--square {
-            width: 29px;
-            padding: 0;
-            font-size: .8rem;
+            width:
+                29px;
+
+            padding:
+                0;
+
+            font-size:
+                .8rem;
         }
+
+
+        .reader-tool--contents svg {
+            width:
+                13px;
+
+            height:
+                13px;
+
+            fill:
+                none;
+
+            stroke:
+                currentColor;
+
+            stroke-width:
+                1.8;
+
+            stroke-linecap:
+                round;
+        }
+
 
         .reader-page-field {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            color: var(--color-text-muted);
-            font-size: .56rem;
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                5px;
+
+            color:
+                var(--color-text-muted);
+
+            font-size:
+                .56rem;
         }
+
 
         .reader-page-field input {
-            width: 50px;
-            min-height: 29px;
-            padding: 3px 5px;
-            text-align: center;
+            width:
+                50px;
+
+            min-height:
+                29px;
+
+            padding:
+                3px 5px;
+
+            text-align:
+                center;
         }
+
 
         .reader-zoom > span {
-            width: 38px;
-            color: var(--color-text-muted);
-            font-size: .54rem;
-            text-align: center;
+            width:
+                38px;
+
+            color:
+                var(--color-text-muted);
+
+            font-size:
+                .54rem;
+
+            text-align:
+                center;
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Reader Body
+        |--------------------------------------------------------------------------
+        */
+
+        .reader-content {
+            position:
+                relative;
+
+            display:
+                flex;
+
+            flex:
+                1;
+
+            min-height:
+                0;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Contents Sidebar
+        |--------------------------------------------------------------------------
+        */
+
+        .reader-toc {
+            width:
+                290px;
+
+            flex:
+                0 0
+                290px;
+
+            max-height:
+                calc(100vh - 170px);
+
+            overflow-y:
+                auto;
+
+            border-right:
+                1px solid
+                var(--color-border);
+
+            background:
+                var(--color-surface);
+        }
+
+
+        .reader-toc__header {
+            position:
+                sticky;
+
+            top:
+                0;
+
+            z-index:
+                3;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                space-between;
+
+            gap:
+                10px;
+
+            padding:
+                13px 14px;
+
+            border-bottom:
+                1px solid
+                var(--color-border);
+
+            background:
+                var(--color-surface);
+        }
+
+
+        .reader-toc__header h2 {
+            margin:
+                2px 0 0;
+
+            color:
+                var(--color-text);
+
+            font-size:
+                .78rem;
+        }
+
+
+        .reader-toc__close {
+            width:
+                28px;
+
+            height:
+                28px;
+
+            display:
+                inline-flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            border:
+                1px solid
+                var(--color-border);
+
+            border-radius:
+                var(--radius-sm);
+
+            background:
+                var(--color-surface);
+
+            color:
+                var(--color-text-muted);
+
+            font-size:
+                .9rem;
+
+            cursor:
+                pointer;
+        }
+
+
+        .reader-toc__close:hover {
+            background:
+                var(--color-surface-soft);
+
+            color:
+                var(--color-text);
+        }
+
+
+        .reader-toc__body {
+            padding:
+                8px;
+        }
+
+
+        .reader-toc__loading {
+            min-height:
+                120px;
+
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            gap:
+                8px;
+
+            color:
+                var(--color-text-muted);
+
+            font-size:
+                .54rem;
+        }
+
+
+        .reader-toc__spinner {
+            width:
+                18px;
+
+            height:
+                18px;
+
+            border:
+                2px solid
+                var(--color-border);
+
+            border-top-color:
+                var(--color-primary);
+
+            border-radius:
+                50%;
+
+            animation:
+                reader-spin
+                .8s
+                linear
+                infinite;
+        }
+
+
+        .reader-toc__empty {
+            padding:
+                18px 10px;
+
+            color:
+                var(--color-text-muted);
+
+            font-size:
+                .55rem;
+
+            line-height:
+                1.6;
+
+            text-align:
+                center;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Generated TOC Tree
+        |--------------------------------------------------------------------------
+        |
+        | These elements are generated by reader.js.
+        |
+        */
+
+        .reader-toc-list {
+            margin:
+                0;
+
+            padding:
+                0;
+
+            list-style:
+                none;
+        }
+
+
+        .reader-toc-list
+        .reader-toc-list {
+            margin-left:
+                12px;
+
+            padding-left:
+                8px;
+
+            border-left:
+                1px solid
+                var(--color-border);
+        }
+
+
+        .reader-toc-item {
+            margin:
+                2px 0;
+        }
+
+
+        .reader-toc-row {
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                3px;
+        }
+
+
+        .reader-toc-expander {
+            width:
+                22px;
+
+            height:
+                22px;
+
+            flex:
+                0 0
+                22px;
+
+            display:
+                inline-flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            padding:
+                0;
+
+            border:
+                0;
+
+            background:
+                transparent;
+
+            color:
+                var(--color-text-muted);
+
+            font-size:
+                .8rem;
+
+            cursor:
+                pointer;
+
+            transition:
+                transform
+                .15s
+                ease;
+        }
+
+
+        .reader-toc-expander.is-open {
+            transform:
+                rotate(
+                    90deg
+                );
+        }
+
+
+        .reader-toc-link {
+            min-width:
+                0;
+
+            width:
+                100%;
+
+            min-height:
+                30px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                space-between;
+
+            gap:
+                8px;
+
+            padding:
+                6px 7px;
+
+            border:
+                0;
+
+            border-radius:
+                var(--radius-sm);
+
+            background:
+                transparent;
+
+            color:
+                var(--color-text);
+
+            font:
+                inherit;
+
+            font-size:
+                .54rem;
+
+            line-height:
+                1.35;
+
+            text-align:
+                left;
+
+            cursor:
+                pointer;
+        }
+
+
+        .reader-toc-link > span:first-child {
+            overflow:
+                hidden;
+
+            text-overflow:
+                ellipsis;
+        }
+
+
+        .reader-toc-link:hover:not(:disabled) {
+            background:
+                var(--color-surface-soft);
+        }
+
+
+        .reader-toc-link.is-active {
+            background:
+                var(--color-surface-soft);
+
+            color:
+                var(--color-primary);
+
+            font-weight:
+                800;
+        }
+
+
+        .reader-toc-link:disabled {
+            cursor:
+                default;
+
+            opacity:
+                .65;
+        }
+
+
+        .reader-toc-page {
+            flex:
+                0 0
+                auto;
+
+            color:
+                var(--color-text-muted);
+
+            font-size:
+                .47rem;
+
+            font-weight:
+                600;
+        }
+
+
+        .reader-toc-children[hidden] {
+            display:
+                none;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Viewer
+        |--------------------------------------------------------------------------
+        */
 
         .reader-workspace {
-            position: relative;
-            flex: 1;
-            min-height: 650px;
-            overflow: auto;
-            padding: 28px;
+            position:
+                relative;
+
+            min-width:
+                0;
+
+            flex:
+                1;
+
+            min-height:
+                650px;
+
+            overflow:
+                auto;
+
+            padding:
+                28px;
         }
+
 
         .reader-stage {
-            min-width: max-content;
-            text-align: center;
+            min-width:
+                max-content;
+
+            text-align:
+                center;
         }
 
+
         .reader-stage canvas {
-            display: inline-block;
-            max-width: none;
-            background: white;
+            display:
+                inline-block;
+
+            max-width:
+                none;
+
+            background:
+                white;
+
             box-shadow:
                 0 8px 28px
-                rgba(0, 0, 0, .12);
+                rgba(
+                    0,
+                    0,
+                    0,
+                    .12
+                );
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Loading / Error
+        |--------------------------------------------------------------------------
+        */
 
         .reader-loading,
         .reader-error {
-            min-height: 420px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
+            min-height:
+                420px;
+
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            text-align:
+                center;
         }
+
 
         .reader-loading strong,
         .reader-error strong {
-            margin-top: 10px;
-            font-size: .72rem;
+            margin-top:
+                10px;
+
+            font-size:
+                .72rem;
         }
+
 
         .reader-loading span,
         .reader-error p {
-            margin: 4px 0;
-            color: var(--color-text-muted);
-            font-size: .58rem;
+            margin:
+                4px 0;
+
+            color:
+                var(--color-text-muted);
+
+            font-size:
+                .58rem;
         }
+
 
         .reader-spinner {
-            width: 26px;
-            height: 26px;
-            border: 2px solid var(--color-border);
-            border-top-color: var(--color-primary);
-            border-radius: 50%;
-            animation: reader-spin .8s linear infinite;
+            width:
+                26px;
+
+            height:
+                26px;
+
+            border:
+                2px solid
+                var(--color-border);
+
+            border-top-color:
+                var(--color-primary);
+
+            border-radius:
+                50%;
+
+            animation:
+                reader-spin
+                .8s
+                linear
+                infinite;
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Footer
+        |--------------------------------------------------------------------------
+        */
 
         .reader-footer {
-            padding: 8px 18px;
-            border-top: 1px solid var(--color-border);
-            background: var(--color-surface);
-            color: var(--color-text-muted);
-            font-size: .49rem;
-            text-align: center;
+            padding:
+                8px 18px;
+
+            border-top:
+                1px solid
+                var(--color-border);
+
+            background:
+                var(--color-surface);
+
+            color:
+                var(--color-text-muted);
+
+            font-size:
+                .49rem;
+
+            text-align:
+                center;
         }
+
 
         @keyframes reader-spin {
+
             to {
-                transform: rotate(360deg);
+                transform:
+                    rotate(
+                        360deg
+                    );
             }
+
         }
 
-        @media (max-width: 700px) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tablet / Mobile
+        |--------------------------------------------------------------------------
+        */
+
+        @media (
+            max-width: 800px
+        ) {
+
+            .reader-toc {
+                position:
+                    absolute;
+
+                inset:
+                    0 auto 0 0;
+
+                z-index:
+                    30;
+
+                width:
+                    min(
+                        320px,
+                        88vw
+                    );
+
+                max-height:
+                    100%;
+
+                box-shadow:
+                    14px 0 35px
+                    rgba(
+                        0,
+                        0,
+                        0,
+                        .18
+                    );
+            }
+
+        }
+
+
+        @media (
+            max-width: 700px
+        ) {
 
             .reader-header {
-                align-items: flex-start;
+                align-items:
+                    flex-start;
             }
+
 
             .reader-actions {
-                flex-wrap: wrap;
+                flex-wrap:
+                    wrap;
             }
+
 
             .reader-toolbar {
-                justify-content: flex-start;
-                overflow-x: auto;
+                display:
+                    flex;
+
+                justify-content:
+                    flex-start;
+
+                overflow-x:
+                    auto;
+
+                scrollbar-width:
+                    thin;
             }
 
+
+            .reader-toolbar__left,
+            .reader-navigation,
+            .reader-zoom,
+            .reader-bookmark {
+                flex:
+                    0 0
+                    auto;
+            }
+
+
             .reader-workspace {
-                padding: 14px;
+                padding:
+                    14px;
             }
 
         }

@@ -186,7 +186,7 @@ class LibraryController extends Controller
                     )
             );
 
-        $resources = $query
+        $books = $query
             ->orderBy('title')
             ->paginate(20)
             ->withQueryString();
@@ -203,7 +203,7 @@ class LibraryController extends Controller
             'school.library.index',
             compact(
                 'school',
-                'resources',
+                'books',
                 'categories'
             )
         );
@@ -244,7 +244,7 @@ class LibraryController extends Controller
                 $book
             );
 
-        $activeBorrowing = BookBorrowing::query()
+        $borrowing = BookBorrowing::query()
             ->where('book_id', $book->id)
             ->where('user_id', $user->id)
             ->where('school_id', $school->id)
@@ -293,7 +293,7 @@ class LibraryController extends Controller
                 'school',
                 'book',
                 'license',
-                'activeBorrowing',
+                'borrowing',
                 'bookmarks',
                 'canRead',
                 'canBorrow',
