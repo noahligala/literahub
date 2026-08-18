@@ -1,85 +1,44 @@
-<x-layouts.dashboard title="{{ $assignment->title }} — LiteraHub">
+<div class="card assignment-details">
 
-    <div class="dashboard-heading">
+    @if ($assignment->book)
 
-        <div>
+        <div class="assignment-resource">
 
-            <span class="eyebrow">
-                Assignment
+            <span class="field-label">
+                Assigned Book
             </span>
 
-            <h1>
-                {{ $assignment->title }}
-            </h1>
+            <h2>
+                {{ $assignment->book->title }}
+            </h2>
 
             <p>
                 {{ $assignment
-                    ->schoolClass
-                    ->name
+                    ->book
+                    ->authors
+                    ->pluck('name')
+                    ->join(', ')
+                    ?: 'Unknown author'
                 }}
             </p>
 
-        </div>
-
-        <div class="actions">
 
             <a
                 href="{{ route(
-                    'school.assignments.edit',
-                    $assignment
+                    'school.library.show',
+                    $assignment->book
                 ) }}"
-                class="button"
+                class="button button-secondary button-small"
             >
-                Edit Assignment
+                View Book
             </a>
 
         </div>
 
-    </div>
+    @endif
 
-    <div class="metric-grid">
 
-        <article>
-            <strong>
-                {{ $assignment
-                    ->students
-                    ->count()
-                }}
-            </strong>
-
-            <span>Assigned Students</span>
-        </article>
-
-        <article>
-            <strong>
-                {{ $assignment
-                    ->students
-                    ->where(
-                        'pivot.status',
-                        'submitted'
-                    )
-                    ->count()
-                }}
-            </strong>
-
-            <span>Submitted</span>
-        </article>
-
-        <article>
-            <strong>
-                {{ ucfirst(
-                    $assignment->status
-                ) }}
-            </strong>
-
-            <span>Status</span>
-        </article>
-
-    </div>
-
-    <div style="height:12px;"></div>
-
-    <div class="card">
+    <div>
 
         <span class="field-label">
             Instructions
@@ -91,6 +50,79 @@
             }}
         </p>
 
+    </div>
+
+
+    @if (
+        $assignment->start_page
+        ||
+        $assignment->end_page
+    )
+
+        <div>
+
+            <span class="field-label">
+                Reading Range
+            </span>
+
+            <strong>
+
+                @if (
+                    $assignment->start_page
+                    &&
+                    $assignment->end_page
+                )
+
+                    Pages
+                    {{ $assignment->start_page }}
+                    –
+                    {{ $assignment->end_page }}
+
+                @elseif (
+                    $assignment->start_page
+                )
+
+                    From page
+                    {{ $assignment->start_page }}
+
+                @else
+
+                    Up to page
+                    {{ $assignment->end_page }}
+
+                @endif
+
+            </strong>
+
+        </div>
+
+    @endif
+
+
+    @if ($assignment->starts_at)
+
+        <div>
+
+            <span class="field-label">
+                Available From
+            </span>
+
+            <strong>
+                {{ $assignment
+                    ->starts_at
+                    ->format(
+                        'd M Y, H:i'
+                    )
+                }}
+            </strong>
+
+        </div>
+
+    @endif
+
+
+    <div>
+
         <span class="field-label">
             Due
         </span>
@@ -99,11 +131,30 @@
             {{ $assignment->due_at
                 ? $assignment
                     ->due_at
-                    ->format('d M Y, H:i')
+                    ->format(
+                        'd M Y, H:i'
+                    )
                 : 'No due date'
             }}
         </strong>
 
     </div>
 
-</x-layouts.dashboard>
+
+    @if ($assignment->total_marks)
+
+        <div>
+
+            <span class="field-label">
+                Total Marks
+            </span>
+
+            <strong>
+                {{ $assignment->total_marks }}
+            </strong>
+
+        </div>
+
+    @endif
+
+</div>

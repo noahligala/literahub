@@ -1,153 +1,51 @@
-@props([
-    'student' => null,
-    'school' => null,
-    'classes' => collect(),
-])
-
-@php
-    $editing = !is_null($student);
-
-    $membership = $editing && $school
-        ? $student
-            ->schools()
-            ->where('schools.id', $school->id)
-            ->first()?->pivot
-        : null;
-
-    $currentClass = $editing
-        ? $student
-            ->studentClasses
-            ->first()?->id
-        : null;
-@endphp
-
 <div class="form-grid">
 
     <div class="form-group">
 
-        <label for="name">
-            Student Name
+        <label>
+            Assignment Title
         </label>
 
         <input
-            id="name"
-            name="name"
+            name="title"
             value="{{ old(
-                'name',
-                $student?->name
+                'title',
+                $assignment->title ?? ''
             ) }}"
             required
         >
 
-        @error('name')
-            <div class="field-error">
-                {{ $message }}
-            </div>
-        @enderror
-
     </div>
 
 
     <div class="form-group">
 
-        <label for="admission_number">
-            Admission Number
-        </label>
-
-        <input
-            id="admission_number"
-            name="admission_number"
-            value="{{ old(
-                'admission_number',
-                $membership?->reference_number
-            ) }}"
-            required
-        >
-
-        @error('admission_number')
-            <div class="field-error">
-                {{ $message }}
-            </div>
-        @enderror
-
-    </div>
-
-
-    <div class="form-group">
-
-        <label for="email">
-            Email Address
-        </label>
-
-        <input
-            id="email"
-            type="email"
-            name="email"
-            value="{{ old(
-                'email',
-                $student?->email
-            ) }}"
-            required
-        >
-
-        @error('email')
-            <div class="field-error">
-                {{ $message }}
-            </div>
-        @enderror
-
-    </div>
-
-
-    <div class="form-group">
-
-        <label for="phone">
-            Phone Number
-        </label>
-
-        <input
-            id="phone"
-            name="phone"
-            value="{{ old(
-                'phone',
-                $student?->phone
-            ) }}"
-            placeholder="+254..."
-        >
-
-        @error('phone')
-            <div class="field-error">
-                {{ $message }}
-            </div>
-        @enderror
-
-    </div>
-
-
-    <div class="form-group">
-
-        <label for="school_class_id">
+        <label>
             Class
         </label>
 
         <select
-            id="school_class_id"
             name="school_class_id"
+            required
         >
 
             <option value="">
-                No Class Assigned
+                Select Class
             </option>
 
-            @foreach($classes as $class)
+
+            @foreach ($classes as $class)
 
                 <option
                     value="{{ $class->id }}"
                     @selected(
                         old(
                             'school_class_id',
-                            $currentClass
-                        ) == $class->id
+                            $assignment
+                                ->school_class_id
+                                ?? null
+                        )
+                        == $class->id
                     )
                 >
                     {{ $class->name }}
@@ -157,122 +55,239 @@
 
         </select>
 
-        @error('school_class_id')
-            <div class="field-error">
-                {{ $message }}
-            </div>
-        @enderror
+    </div>
+
+
+    <div class="form-group">
+
+        <label>
+            Book
+        </label>
+
+        <select
+            name="resource_id"
+        >
+
+            <option value="">
+                Select Book
+            </option>
+
+
+            @foreach ($books as $book)
+
+                <option
+                    value="{{ $book->id }}"
+                    @selected(
+                        old(
+                            'resource_id',
+                            $assignment
+                                ->resource_id
+                                ?? null
+                        )
+                        == $book->id
+                    )
+                >
+                    {{ $book->title }}
+
+                    @if (
+                        $book->authors->isNotEmpty()
+                    )
+                        —
+                        {{ $book
+                            ->authors
+                            ->pluck('name')
+                            ->join(', ')
+                        }}
+                    @endif
+                </option>
+
+            @endforeach
+
+        </select>
+
+        <small class="form-hint">
+            Only books currently licensed to this school
+            and allowed for teacher assignment are shown.
+        </small>
 
     </div>
 
 
     <div class="form-group">
 
-        <label for="status">
-            Account Status
+        <label>
+            Available From
+        </label>
+
+        <input
+            type="datetime-local"
+            name="starts_at"
+            value="{{ old(
+                'starts_at',
+                isset($assignment)
+                    && $assignment->starts_at
+                        ? $assignment
+                            ->starts_at
+                            ->format(
+                                'Y-m-d\TH:i'
+                            )
+                        : ''
+            ) }}"
+        >
+
+    </div>
+
+
+    <div class="form-group">
+
+        <label>
+            Due Date
+        </label>
+
+        <input
+            type="datetime-local"
+            name="due_at"
+            value="{{ old(
+                'due_at',
+                isset($assignment)
+                    && $assignment->due_at
+                        ? $assignment
+                            ->due_at
+                            ->format(
+                                'Y-m-d\TH:i'
+                            )
+                        : ''
+            ) }}"
+        >
+
+    </div>
+
+
+    <div class="form-group">
+
+        <label>
+            Total Marks
+        </label>
+
+        <input
+            type="number"
+            name="total_marks"
+            min="1"
+            max="1000"
+            value="{{ old(
+                'total_marks',
+                $assignment
+                    ->total_marks
+                    ?? ''
+            ) }}"
+            placeholder="e.g. 20"
+        >
+
+    </div>
+
+
+    <div class="form-group">
+
+        <label>
+            Start Page
+        </label>
+
+        <input
+            type="number"
+            name="start_page"
+            min="1"
+            value="{{ old(
+                'start_page',
+                $assignment
+                    ->start_page
+                    ?? ''
+            ) }}"
+            placeholder="Optional"
+        >
+
+    </div>
+
+
+    <div class="form-group">
+
+        <label>
+            End Page
+        </label>
+
+        <input
+            type="number"
+            name="end_page"
+            min="1"
+            value="{{ old(
+                'end_page',
+                $assignment
+                    ->end_page
+                    ?? ''
+            ) }}"
+            placeholder="Optional"
+        >
+
+    </div>
+
+
+    <div class="form-group">
+
+        <label>
+            Status
         </label>
 
         <select
-            id="status"
             name="status"
             required
         >
 
-            <option
-                value="active"
-                @selected(
-                    old(
-                        'status',
-                        $student?->status ?? 'active'
-                    ) === 'active'
-                )
-            >
-                Active
-            </option>
+            @foreach ([
+                'draft' =>
+                    'Draft',
 
-            <option
-                value="inactive"
-                @selected(
-                    old(
-                        'status',
-                        $student?->status
-                    ) === 'inactive'
-                )
-            >
-                Inactive
-            </option>
+                'published' =>
+                    'Published',
 
-            <option
-                value="suspended"
-                @selected(
-                    old(
-                        'status',
-                        $student?->status
-                    ) === 'suspended'
-                )
-            >
-                Suspended
-            </option>
+                'closed' =>
+                    'Closed',
+            ] as $value => $label)
+
+                <option
+                    value="{{ $value }}"
+                    @selected(
+                        old(
+                            'status',
+                            $assignment
+                                ->status
+                                ?? 'draft'
+                        )
+                        === $value
+                    )
+                >
+                    {{ $label }}
+                </option>
+
+            @endforeach
 
         </select>
 
-        @error('status')
-            <div class="field-error">
-                {{ $message }}
-            </div>
-        @enderror
-
     </div>
 
-
-    <div class="form-group">
-
-        <label for="password">
-            {{ $editing
-                ? 'New Password'
-                : 'Password'
-            }}
-        </label>
-
-        <input
-            id="password"
-            type="password"
-            name="password"
-            autocomplete="new-password"
-            @required(!$editing)
-        >
-
-        @if($editing)
-
-            <div class="field-help">
-                Leave blank to keep the existing password.
-            </div>
-
-        @endif
-
-        @error('password')
-            <div class="field-error">
-                {{ $message }}
-            </div>
-        @enderror
-
-    </div>
+</div>
 
 
-    <div class="form-group">
+<div class="form-group">
 
-        <label for="password_confirmation">
-            Confirm Password
-        </label>
+    <label>
+        Instructions
+    </label>
 
-        <input
-            id="password_confirmation"
-            type="password"
-            name="password_confirmation"
-            autocomplete="new-password"
-            @required(!$editing)
-        >
-
-    </div>
+    <textarea
+        name="instructions"
+        placeholder="Describe the reading task, questions or assessment..."
+    >{{ old(
+        'instructions',
+        $assignment->instructions ?? ''
+    ) }}</textarea>
 
 </div>

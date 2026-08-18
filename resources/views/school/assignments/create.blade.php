@@ -13,13 +13,36 @@
             </h1>
 
             <p>
-                Assign literature and academic work
-                to a class.
+                Assign licensed literature and academic work
+                to one of your classes.
             </p>
 
         </div>
 
     </div>
+
+
+    @if ($errors->any())
+
+        <div class="alert alert--error">
+
+            <strong>
+                Please correct the following:
+            </strong>
+
+            <ul>
+                @foreach ($errors->all() as $error)
+
+                    <li>
+                        {{ $error }}
+                    </li>
+
+                @endforeach
+            </ul>
+
+        </div>
+
+    @endif
 
 
     <form
@@ -35,7 +58,7 @@
 
         <x-forms.assignment
             :classes="$classes"
-            :resources="$resources ?? collect()"
+            :books="$books ?? collect()"
         />
 
 

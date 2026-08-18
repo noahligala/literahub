@@ -16,22 +16,46 @@ class Assignment extends Model
         'school_class_id',
         'creator_id',
         'resource_id',
+
         'title',
         'instructions',
+
+        'starts_at',
         'due_at',
+
+        'start_page',
+        'end_page',
+
+        'total_marks',
+
         'status',
     ];
 
     protected function casts(): array
     {
         return [
-            'due_at' => 'datetime',
+            'starts_at' =>
+                'datetime',
+
+            'due_at' =>
+                'datetime',
+
+            'start_page' =>
+                'integer',
+
+            'end_page' =>
+                'integer',
+
+            'total_marks' =>
+                'integer',
         ];
     }
 
     public function school(): BelongsTo
     {
-        return $this->belongsTo(School::class);
+        return $this->belongsTo(
+            School::class
+        );
     }
 
     public function schoolClass(): BelongsTo
@@ -49,6 +73,25 @@ class Assignment extends Model
         );
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Assigned Book
+    |--------------------------------------------------------------------------
+    |
+    | resource_id currently stores the Book ID.
+    |
+    | Later we can rename the database column to book_id.
+    |
+    */
+
+    public function book(): BelongsTo
+    {
+        return $this->belongsTo(
+            Book::class,
+            'resource_id'
+        );
+    }
+
     public function students(): BelongsToMany
     {
         return $this
@@ -62,5 +105,25 @@ class Assignment extends Model
                 'submitted_at',
             ])
             ->withTimestamps();
+    }
+
+    public function isPublished(): bool
+    {
+        return $this->status
+            === 'published';
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->status
+            === 'closed';
+    }
+
+    public function isOverdue(): bool
+    {
+        return $this->due_at
+            && now()->greaterThan(
+                $this->due_at
+            );
     }
 }

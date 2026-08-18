@@ -12,9 +12,37 @@
                 Edit {{ $assignment->title }}
             </h1>
 
+            <p>
+                Update the assignment, reading range,
+                class or publication status.
+            </p>
+
         </div>
 
     </div>
+
+
+    @if ($errors->any())
+
+        <div class="alert alert--error">
+
+            <strong>
+                Please correct the following:
+            </strong>
+
+            <ul>
+                @foreach ($errors->all() as $error)
+
+                    <li>
+                        {{ $error }}
+                    </li>
+
+                @endforeach
+            </ul>
+
+        </div>
+
+    @endif
 
 
     <form
@@ -33,7 +61,7 @@
         <x-forms.assignment
             :assignment="$assignment"
             :classes="$classes"
-            :resources="$resources ?? collect()"
+            :books="$books ?? collect()"
         />
 
 
