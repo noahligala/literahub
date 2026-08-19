@@ -1,46 +1,76 @@
 # LiteraHub Platform
 
 **Author:** Ligco Technologies  
-**Project type:** Subscription-based education SaaS  
+**Project type:** Subscription-based digital literature and education SaaS  
 **Primary framework:** Laravel 13  
-**Status:** Initial starter architecture / MVP foundation  
+**Current stage:** Active MVP development / product demonstration build  
 **Licence:** Proprietary
 
-LiteraHub is a web-first digital literature platform designed for schools, universities, teachers, authors, publishers, and individual students. It enables institutions and learners to subscribe to protected literary resources, read approved books online, receive assignments, track reading progress, manage users, and pay for access through configurable payment providers.
+LiteraHub is a web-first digital literature and academic learning platform for schools, teachers, students, authors, publishers, platform administrators, and individual subscribers.
 
-The project is designed as a **modular Laravel monolith**. This keeps the first implementation affordable and maintainable while avoiding infrastructure-specific business logic. Storage, payments, queues, notifications, caching, and databases are accessed through Laravel abstractions or application contracts so providers can be changed later without rewriting the whole system.
+The platform combines a protected digital library with school licensing, content review, teacher assignment workflows, online reading, borrowing, bookmarking, user management, reporting, and future payment/subscription automation.
 
-> This repository is an implementation-ready starter. It includes the project structure, core domain models, initial migrations, service contracts, starter interfaces, Docker configuration, CI configuration, and project documentation. Authentication screens, complete Filament panels, payment-provider production credentials, the protected document reader, assessments, and several advanced modules still require implementation.
+The current implementation has progressed beyond the original starter architecture. Core content-management, school licensing, school-library access, protected reading, borrowing, bookmarking, role routing, and the first assignment-management workflows are operational.
+
+The application is implemented as a **modular Laravel monolith**. This keeps the MVP affordable and maintainable while allowing infrastructure services such as payments, storage, queues, notifications, caching, and databases to be changed later through Laravel abstractions and application services.
 
 ---
 
 ## 1. Product objectives
 
-LiteraHub should provide:
+LiteraHub is designed to provide:
 
-- Subscription access for schools, universities, and individual students
-- A protected online library for novels, plays, poetry, study guides, academic papers, lecture notes, audio, and video
-- School administration for teachers, students, classes, licence allocation, and usage reporting
-- Author and content-management workflows
-- Reading progress, notes, highlights, bookmarks, and assignments
+- Subscription and licensed-resource access for schools and individual subscribers
+- A protected online literature library
+- Publisher, author, book, review, publication, and licensing workflows
+- School administration for students, teachers, classes, streams, subscriptions, and licences
+- Teacher access to licensed institutional literature
+- Class-based reading and assignment workflows
+- Student borrowing, online reading, bookmarks, notes, and reading progress
+- Approval-based access to licensed books outside a student's normal class scope
+- Rights-aware print and download controls
+- Configurable school and individual subscription models
 - M-Pesa, card, and manual institutional payment support
 - Invoices, receipts, renewals, expiry rules, and payment callbacks
-- Role-based access control and auditable content access
-- A responsive, installable web application that works across desktops, tablets, and phones
+- Auditable resource access and role-based security
+- A responsive application for desktops, tablets, and phones
+- Future PWA support
 
 ---
 
-## 2. Intended users
+## 2. Current roles
 
-| Role | Main responsibilities |
+The current role model is:
+
+| Role | Primary responsibilities |
 |---|---|
-| Platform administrator | Manages schools, users, plans, content, payments, reports, and platform settings |
-| Author/content manager | Uploads, categorises, updates, and reviews literary resources |
-| School administrator | Manages a school subscription, teachers, students, classes, and licence allocation |
-| Teacher/lecturer | Assigns resources, creates assessments, and reviews learner progress |
-| Student | Reads resources, saves notes, completes assignments, and tracks progress |
-| Individual subscriber | Purchases and uses personal resource access outside a school account |
-| Parent/guardian | Optional role for purchasing a learner plan and viewing limited progress |
+| `super_admin` | Full platform administration |
+| `platform_admin` | Platform operations and administration |
+| `content_manager` | Content review, approval, publication, and catalogue management |
+| `author` | Author profile and permitted content workflows |
+| `school_admin` | School users, classes, licences, subscription, and institutional reporting |
+| `teacher` | Licensed library access, class teaching tools, assignments, and student activity |
+| `student` | School library access, borrowing, reading, bookmarks, requests, and assignments |
+| `individual_subscriber` | Personal library/subscription access outside a school |
+| `finance` | Financial and licence-related administrative workflows |
+| `support` | Support and platform assistance workflows |
+
+### Current dashboard routing
+
+```text
+super_admin           -> /admin
+platform_admin        -> /platform
+content_manager       -> /staff
+author                -> /staff
+finance               -> /staff
+support               -> /staff
+school_admin          -> /school
+teacher               -> /teacher
+student               -> /school/library
+individual_subscriber -> /library
+```
+
+All authenticated users initially pass through `/dashboard`, where `DashboardController` determines the appropriate portal.
 
 ---
 
@@ -48,135 +78,482 @@ LiteraHub should provide:
 
 ### Backend
 
-- PHP 8.3 or newer
+- PHP 8.3+ supported; current development environment uses PHP 8.4
 - Laravel 13
-- Laravel Sanctum for future API and mobile authentication
-- Spatie Laravel Permission for roles and permissions
-- Laravel queues, scheduler, notifications, policies, events, and filesystem
+- Laravel Fortify authentication
+- Passkeys / two-factor authentication support through the current authentication stack
+- Laravel Sanctum for future API/mobile authentication
+- Spatie Laravel Permission
+- Laravel queues
+- Laravel scheduler
+- Laravel notifications
+- Laravel policies and middleware
+- Laravel filesystem abstraction
+- Eloquent ORM
 
 ### Frontend
 
-- Blade templates
+- Blade
 - Livewire 4
-- Filament 5 for administrative panels
+- Filament 5
 - Tailwind CSS 4
-- Alpine.js where lightweight browser interactivity is needed
+- Alpine.js
 - Vite 7
+- PDF.js for the current online PDF reader
 
 ### Data and infrastructure
 
-- SQLite for quick local development
-- MySQL 8+ or PostgreSQL 16+ for staging and production
-- Redis recommended for production cache, sessions, rate limiting, and queues
-- S3-compatible private object storage recommended for protected resources
-- Nginx and PHP-FPM for production hosting
-- Docker Compose configuration included for a reproducible development environment
-
-### Document reading
-
-Recommended integrations for later implementation:
-
-- PDF.js for PDF reading
-- EPUB.js for EPUB reading
-- Server-generated expiring access links
-- User or school watermarks
-- Copy, printing, and download rules based on the resource licence
+- SQLite for local development
+- MySQL/MariaDB for the temporary cPanel demonstration environment
+- MySQL 8+ or PostgreSQL recommended for long-term production
+- Redis recommended for production sessions, cache, rate limiting, and queues
+- S3-compatible private object storage recommended for protected books in production
+- Apache/cPanel supported for MVP demonstration
+- Nginx + PHP-FPM or equivalent managed application hosting recommended for production
 
 ---
 
 ## 4. Repository structure
 
 ```text
-literahub-platform/
+literahub/
 ├── app/
-│   ├── Contracts/              Provider-independent service contracts
-│   ├── Enums/                  Roles, statuses, and shared domain values
-│   ├── Models/                 Initial Eloquent domain models
-│   ├── Providers/              Laravel service bindings
-│   └── Services/               Payment and infrastructure implementations
-├── bootstrap/                  Laravel application bootstrap
-├── config/                     Application and provider configuration
+│   ├── Http/
+│   │   └── Controllers/
+│   ├── Models/
+│   ├── Services/
+│   ├── Policies/
+│   └── Providers/
+├── bootstrap/
+├── config/
 ├── database/
-│   ├── factories/              Model factories
-│   ├── migrations/             Initial database schema
-│   └── seeders/                Starter subscription-plan data
-├── docker/                     Nginx and container configuration
-├── docs/
-│   ├── ARCHITECTURE.md         System architecture and boundaries
-│   ├── DATABASE.md             Database design notes
-│   ├── DEVELOPMENT_WORKFLOW.md Branching and engineering workflow
-│   ├── PRODUCT_REQUIREMENTS.md Product scope and user requirements
-│   ├── ROADMAP.md              Recommended implementation roadmap
-│   ├── SECURITY.md             Security and protected-content guidance
-│   └── assets/                 Interface concept image
-├── public/                     Public web root
+│   ├── factories/
+│   ├── migrations/
+│   └── seeders/
+├── public/
+│   ├── build/
+│   ├── index.php
+│   └── .htaccess
 ├── resources/
-│   ├── css/                    Frontend styles
-│   ├── js/                     Frontend JavaScript
-│   └── views/                  Starter Blade interfaces
-├── routes/                     Web, API, and console routes
-├── storage/                    Runtime files and logs
-├── tests/                      Initial automated tests
-├── .env.example               Environment configuration template
-├── docker-compose.yml         Development services
-├── Dockerfile                 PHP application image
-├── Makefile                   Common commands
-├── composer.json              PHP dependencies and scripts
-└── package.json               Frontend dependencies and scripts
+│   ├── css/
+│   ├── js/
+│   └── views/
+├── routes/
+├── storage/
+├── tests/
+├── .env.example
+├── artisan
+├── composer.json
+├── package.json
+└── README.md
 ```
 
 ---
 
-## 5. Current implementation
+## 5. Current MVP implementation status
 
-The starter currently includes:
+### Authentication and accounts
 
-- Laravel 13 application bootstrap
-- User-role and subscription-status enums
-- Initial models for users, schools, resources, plans, subscriptions, payments, and reading progress
-- Initial migrations for the above domains
-- Seed data for example subscription plans
-- Provider-independent payment contract
-- Initial M-Pesa service placeholder
-- Protected-resource filesystem configuration
-- Starter landing, pricing, and dashboard views
-- Docker, Nginx, MySQL, and Redis configuration
-- GitHub Actions test workflow
-- Product, architecture, database, security, workflow, and roadmap documentation
-- Basic feature test for the public home page
+Implemented:
 
-### Not yet complete
+- Registration flows
+- Login
+- Logout
+- Password reset
+- Fortify-based authentication
+- Two-factor authentication support
+- Passkey-related routes
+- Role-based dashboard routing
+- Spatie role handling
 
-The following must be implemented before production use:
+### Platform administration
 
-- Registration, login, password reset, and email/phone verification screens
-- Full role and permission seeding
-- Filament administrator and school panels
-- Complete school membership, class, teacher, and student modules
-- Resource upload, publication, versioning, entitlement, and approval workflows
-- Secure PDF/EPUB reader
-- Bookmarks, highlights, reader notes, and offline policies
-- Production M-Pesa authentication, STK Push, validation, and callback verification
-- Card-payment provider integration
-- Invoices, receipts, refunds, and reconciliation
-- Assignments, quizzes, grading, submissions, and certificates
-- Notifications through email, SMS, WhatsApp, and in-app channels
-- Complete audit logging, account-sharing controls, watermarking, and abuse detection
-- Production deployment hardening and load testing
+Implemented:
+
+- Super Administrator dashboard
+- Platform Administrator dashboard
+- Staff dashboard
+- Publishers CRUD
+- Authors CRUD
+- Books CRUD
+- Book review workflow
+- Book approval workflow
+- Book publication workflow
+- Book licence management
+
+### Content lifecycle
+
+The working content lifecycle is currently:
+
+```text
+Publisher
+   ↓
+Author
+   ↓
+Book Upload
+   ↓
+Review
+   ↓
+Approve / Request Changes / Reject
+   ↓
+Publish
+   ↓
+Issue School Licence
+   ↓
+Institutional Library
+```
+
+The platform can currently:
+
+- Create and update publishers
+- Create and update authors
+- Upload books
+- Store ISBN and book metadata
+- Review books
+- Approve books
+- Publish books
+- Reject or request changes
+- Issue school licences
+- Renew or revoke licences
+- Update book metadata and rights
+
+### School administration
+
+Implemented or scaffolded:
+
+- School dashboard
+- Students
+- Teachers
+- Classes
+- Streams
+- School profile
+- School library
+- School book licences
+- School licence catalogue
+- Book access requests
+- Assignments
+- Subscription views
+- Reporting views
+
+### Teacher portal
+
+Current teacher portal includes or exposes:
+
+- Teacher dashboard
+- Classes
+- Shared institutional library
+- Reading lists placeholder
+- Assignments
+- Students
+- Performance
+
+Teacher library access uses the same school-licensed catalogue rather than exposing the global catalogue.
+
+### Student / learner portal
+
+Current student flow includes:
+
+- School-licensed library access
+- Book details
+- Borrowing
+- Returning
+- Online reading
+- Bookmarking
+- Access requests for permitted out-of-class books
+- Assignment integration in progress
+
+### Individual subscriber portal
+
+Scaffolded routes currently include:
+
+- Dashboard
+- Browse
+- Continue reading
+- Bookmarks
+- Notes
+- Assignments
+- Progress
+- Subscription
+- Profile
+
+Individual subscriber entitlement rules still need to be fully defined and enforced.
 
 ---
 
-## 6. Local installation: Windows
+## 6. Library and licensing rules
 
-### Prerequisites
+LiteraHub uses licence-aware catalogue access.
+
+### Core rule
+
+A school user must not see or consume a book merely because the book exists on the platform.
+
+The access chain is:
+
+```text
+Book/IP Rights
+      ↓
+Active School Licence
+      ↓
+User Entitlement
+      ↓
+Role/Class/Approval Rules
+      ↓
+Read / Borrow / Assign / Download / Print
+```
+
+### School catalogue rules
+
+- The school library contains only books covered by an active school licence.
+- Expired or revoked licences remove normal school access.
+- Students normally see published books assigned to their classes.
+- A student may receive approved individual access to another school-licensed title.
+- An unlicensed title should use the school-admin licence acquisition/request workflow.
+- Teachers may only assign resources permitted by the active school licence and book rights.
+
+### Rights hierarchy
+
+The licence can narrow rights but must never expand the underlying book/IP rights.
+
+Examples:
+
+```text
+Book says:
+allow_download = false
+
+School licence says:
+download = true
+
+Effective result:
+download = false
+```
+
+Rights currently include or anticipate:
+
+- online reading
+- borrowing
+- teacher assignment
+- download
+- printing
+- loan duration
+- concurrent loans
+- school-specific rights restrictions
+
+---
+
+## 7. Book access and borrowing
+
+The institutional library currently supports:
+
+- Licensed-book filtering
+- Search
+- Category filtering
+- Publisher and author metadata
+- Book detail views
+- Borrowing
+- Returning
+- Bookmark creation
+- Licence validation
+- role-aware access checks
+
+The student catalogue restricts visibility to books that are:
+
+1. covered by an active school licence;
+2. published; and
+3. either assigned to one of the student's classes or individually approved.
+
+### Borrowing
+
+Borrowing currently checks:
+
+- student role
+- book access
+- duplicate active borrowing
+- maximum concurrent loans
+- configured loan duration
+
+The borrowing record stores:
+
+- user
+- book
+- school
+- borrowed time
+- due time
+- returned time
+- status
+
+---
+
+## 8. Protected reader
+
+The current MVP reader uses **PDF.js**.
+
+Current reader features include:
+
+- authenticated reader route
+- protected stream endpoint
+- previous/next page navigation
+- page number navigation
+- zoom
+- bookmarks
+- optional download
+- optional print
+- rights-aware reader controls
+- PDF outline / contents support where available
+- PDF.js WebAssembly/JBIG2 support assets
+
+Current protected reader routes include:
+
+```text
+/reader/{book}
+/reader/{book}/stream
+/reader/{book}/download
+/reader/{book}/print
+```
+
+### Important MVP limitation
+
+The current PDF.js reader still sends authorised PDF content to the browser for rendering.
+
+A stronger architecture has already been designed for later development:
+
+```text
+Original PDF
+    ↓
+Private Storage
+    ↓
+Backend Authorisation
+    ↓
+Page Rendering Service
+    ↓
+Secure Page API
+    ↓
+Browser Reader
+```
+
+The stronger server-rendered architecture is intentionally postponed while the MVP learning and demonstration flows are completed.
+
+### Protected content requirements
+
+Original protected books should not be stored directly in `public/`.
+
+Preferred location:
+
+```text
+storage/app/private/
+```
+
+or a private S3-compatible object-storage bucket.
+
+---
+
+## 9. Assignments
+
+Assignment management is now under active implementation.
+
+### Existing assignment model
+
+Assignments currently contain:
+
+- school
+- class
+- creator
+- resource/book reference
+- title
+- instructions
+- due date
+- status
+
+Assignment-student membership is represented by the `assignment_student` pivot.
+
+Existing pivot state includes:
+
+- status
+- score
+- submitted time
+
+### MVP assignment expansion
+
+The current assignment workflow is being expanded to include:
+
+- licensed book selector
+- available-from date
+- due date
+- start page
+- end page
+- total marks
+- assignment status
+- written learner response
+- teacher feedback
+- grading information
+
+Target MVP workflow:
+
+```text
+Teacher
+   ↓
+Choose Licensed Book
+   ↓
+Choose Class
+   ↓
+Create Assignment
+   ↓
+Publish
+   ↓
+Students Receive Assignment
+   ↓
+Open Assigned Book
+   ↓
+Read Required Range
+   ↓
+Submit Response
+   ↓
+Teacher Reviews
+   ↓
+Marks + Feedback
+```
+
+### Assignment statuses
+
+Current assignment statuses:
+
+```text
+draft
+published
+closed
+archived
+```
+
+---
+
+## 10. Multi-tenancy strategy
+
+LiteraHub currently uses **shared-database logical tenancy**.
+
+Institution-scoped records include a `school_id` or equivalent relationship.
+
+Important protections:
+
+- School membership must be active.
+- Controllers and services scope queries by school.
+- School users must not receive another school's licences, classes, students, assignments, or reading records.
+- Platform administrators may cross school boundaries only through explicit permissions.
+
+Do not create a separate database per school during the MVP.
+
+---
+
+## 11. Local development
+
+### Windows prerequisites
 
 Install:
 
-1. PHP 8.3 or newer with the required extensions
-2. Composer 2.8 or newer
-3. Node.js 20 or newer
+1. PHP 8.3+
+2. Composer
+3. Node.js 20+
 4. Git
-5. MySQL 8+ when not using SQLite
+5. SQLite or MySQL
 
 Recommended PHP extensions:
 
@@ -200,34 +577,23 @@ xml
 zip
 ```
 
-### PowerShell installation
+### Windows PowerShell setup
 
 ```powershell
-# Extract the ZIP, then enter the project directory
-cd literahub-platform
-
-# Install PHP dependencies
 composer install
 
-# Create the environment file
 Copy-Item .env.example .env
 
-# Generate the encryption key
 php artisan key:generate
 
-# Ensure the local SQLite file exists
 New-Item database/database.sqlite -ItemType File -Force
 
-# Create database tables and seed starter plans
 php artisan migrate --seed
 
-# Install frontend dependencies
 npm install
 
-# Build frontend assets
 npm run build
 
-# Run the application
 php artisan serve
 ```
 
@@ -237,11 +603,13 @@ Open:
 http://127.0.0.1:8000
 ```
 
-For active frontend development, use two terminals:
+For active frontend work use two terminals:
 
 ```powershell
 php artisan serve
 ```
+
+and:
 
 ```powershell
 npm run dev
@@ -249,321 +617,336 @@ npm run dev
 
 ---
 
-## 7. Local installation: Linux or macOS
+## 12. MySQL configuration
 
-```bash
-cd literahub-platform
-composer install
-cp .env.example .env
-php artisan key:generate
-touch database/database.sqlite
-php artisan migrate --seed
-npm install
-npm run build
-php artisan serve
-```
-
-Open `http://127.0.0.1:8000`.
-
-For active development:
-
-```bash
-npm run dev
-```
-
----
-
-## 8. MySQL configuration
-
-Create a database:
-
-```sql
-CREATE DATABASE literahub
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
-```
-
-Update `.env`:
+Example production/demo configuration:
 
 ```env
 DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
+DB_HOST=localhost
 DB_PORT=3306
-DB_DATABASE=literahub
-DB_USERNAME=root
-DB_PASSWORD=your_password
+DB_DATABASE=cpaneluser_literahub
+DB_USERNAME=cpaneluser_literahub
+DB_PASSWORD=your_secure_password
 ```
 
-Then run:
+Then:
 
 ```bash
-php artisan config:clear
-php artisan migrate:fresh --seed
+php artisan optimize:clear
+php artisan migrate --force
 ```
 
-Never run `migrate:fresh` against a production database because it deletes all existing tables and data.
+Never use:
+
+```bash
+php artisan migrate:fresh
+```
+
+against production or a persistent demonstration database unless intentionally resetting all data.
 
 ---
 
-## 9. Docker setup
+## 13. Environment configuration
 
-The repository includes a Docker-based environment for developers who do not want to configure PHP, MySQL, and Redis directly on their computers.
-
-### Start containers
-
-```bash
-docker compose up -d --build
-```
-
-### Install dependencies and initialise the project
-
-```bash
-docker compose exec app composer install
-docker compose exec app cp .env.example .env
-docker compose exec app php artisan key:generate
-docker compose exec app php artisan migrate --seed
-```
-
-Install and build frontend dependencies on the host machine:
-
-```bash
-npm install
-npm run build
-```
-
-Inspect `docker-compose.yml` before first use and make sure the `.env` database host matches the Docker service name, normally:
+### Local
 
 ```env
-DB_CONNECTION=mysql
-DB_HOST=mysql
-DB_PORT=3306
-DB_DATABASE=literahub
-DB_USERNAME=literahub
-DB_PASSWORD=secret
-
-CACHE_STORE=redis
-QUEUE_CONNECTION=redis
-SESSION_DRIVER=redis
-REDIS_HOST=redis
-```
-
----
-
-## 10. Environment variables
-
-Copy `.env.example` to `.env`. Never commit the real `.env` file.
-
-### Application
-
-```env
-APP_NAME=LiteraHub
+APP_NAME="LiteraHub"
 APP_ENV=local
-APP_KEY=
 APP_DEBUG=true
-APP_URL=http://localhost:8000
+APP_URL=http://127.0.0.1:8000
 ```
 
-Production must use:
+### Demo / production-style environment
 
 ```env
+APP_NAME="LiteraHub"
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://your-domain.example
+APP_URL=https://literahub.example.com
 ```
 
-### Files and protected resources
-
-```env
-FILESYSTEM_DISK=local
-RESOURCE_FILESYSTEM_DISK=local
-```
-
-For production, configure an S3-compatible private disk and set:
-
-```env
-RESOURCE_FILESYSTEM_DISK=s3
-```
-
-Protected books must not be placed directly in `public/`.
-
-### Queues
-
-Development:
-
-```env
-QUEUE_CONNECTION=database
-```
-
-Production recommendation:
-
-```env
-QUEUE_CONNECTION=redis
-```
-
-Run a worker during development:
-
-```bash
-php artisan queue:work
-```
-
-Production workers should be managed by Supervisor, systemd, or the hosting platform.
-
-### Scheduler
-
-During local development:
-
-```bash
-php artisan schedule:work
-```
-
-Production cron entry:
-
-```cron
-* * * * * cd /path/to/literahub-platform && php artisan schedule:run >> /dev/null 2>&1
-```
-
-### Mail
-
-Local development logs email instead of sending it:
-
-```env
-MAIL_MAILER=log
-```
-
-Configure SMTP or a transactional email provider before production launch.
+Never commit the real `.env`.
 
 ---
 
-## 11. M-Pesa setup
+## 14. File storage
 
-The project includes a service boundary for M-Pesa, but production payment processing is not complete.
+### Public assets
 
-Set these values in `.env` after obtaining credentials from the provider:
+Appropriate public assets include:
 
-```env
-PAYMENT_GATEWAY=mpesa
-MPESA_ENVIRONMENT=sandbox
-MPESA_CONSUMER_KEY=
-MPESA_CONSUMER_SECRET=
-MPESA_SHORTCODE=
-MPESA_PASSKEY=
-MPESA_CALLBACK_URL="${APP_URL}/api/payments/mpesa/callback"
+- publisher logos
+- book covers
+- profile images
+- intentionally public media
+
+Laravel public storage:
+
+```text
+storage/app/public/
 ```
+
+with:
+
+```bash
+php artisan storage:link
+```
+
+### Protected content
+
+Protected literature should remain on a private disk:
+
+```text
+storage/app/private/
+```
+
+Do not expose protected books through a direct public path.
+
+A protected book should be accessed through authorised Laravel endpoints.
+
+---
+
+## 15. Temporary cPanel MVP deployment
+
+LiteraHub is currently suitable for temporary product demonstrations on shared cPanel hosting where PHP 8.3/8.4 and MySQL are available.
+
+### Important
+
+On cPanel/Apache, do **not** use:
+
+```bash
+php artisan serve
+```
+
+Apache serves the application automatically.
+
+### Recommended commands
+
+```bash
+composer install --no-dev --optimize-autoloader
+
+php artisan migrate --force
+
+php artisan storage:link
+
+php artisan optimize:clear
+
+php artisan config:cache
+
+php artisan route:cache
+
+php artisan view:cache
+```
+
+Build frontend assets locally if Node.js is unavailable on cPanel:
+
+```powershell
+npm install
+npm run build
+```
+
+Upload:
+
+```text
+public/build/
+```
+
+to the server.
+
+### Current shared-hosting layout
+
+For the temporary MVP demonstration, the entire project may currently exist below the web-accessible account path.
+
+This is **not the preferred final production configuration**.
+
+The preferred long-term configuration is:
+
+```text
+DocumentRoot -> /path/to/literahub/public
+```
+
+For the temporary demo, Apache `.htaccess` rules must:
+
+- disable directory indexing
+- deny hidden files
+- deny access to internal Laravel directories
+- deny `.env`
+- deny `composer.json`
+- deny `artisan`
+- deny `vendor`
+- deny `storage`
+- route all application URLs through `public/index.php`
+
+### Root `.htaccess`
+
+A root-level protection/rewrite configuration is required when the project root is temporarily web-accessible.
+
+The root `.htaccess` should route normal requests directly into Laravel's front controller while blocking internal paths.
+
+### `public/.htaccess`
+
+The `public/` directory must contain the normal Laravel Apache rewrite configuration so application routes can resolve correctly.
+
+Without working Apache rewrite rules, the home page may load while URLs such as these return 404:
+
+```text
+/login
+/dashboard
+/school/library
+/school/assignments
+/teacher
+```
+
+### Route verification
+
+Use:
+
+```bash
+php artisan route:list
+```
+
+If routes appear in `route:list` but Apache returns a 404, investigate `.htaccess`, `mod_rewrite`, `AllowOverride`, or document-root configuration rather than modifying Laravel routes.
+
+---
+
+## 16. cPanel queue and scheduler strategy
+
+Shared hosting may not allow a permanent worker process.
+
+For the MVP, database queues can be processed using cron:
+
+```cron
+* * * * * cd /home/USERNAME/path-to-literahub && php artisan queue:work --stop-when-empty --tries=3 >> /dev/null 2>&1
+```
+
+Laravel scheduler:
+
+```cron
+* * * * * cd /home/USERNAME/path-to-literahub && php artisan schedule:run >> /dev/null 2>&1
+```
+
+For long-term production, use a persistent worker managed by Supervisor, systemd, container orchestration, or a managed application platform.
+
+---
+
+## 17. Payments
+
+The architecture includes payment abstraction for:
+
+- M-Pesa
+- cards
+- manual institutional payments
+
+Production payment processing is not yet complete.
 
 A secure payment flow must:
 
-1. Create an internal invoice before starting payment.
-2. Send the payment request from the server, never directly from browser JavaScript.
-3. Store the provider request identifiers.
-4. Verify the callback authenticity and transaction status.
-5. Make callback processing idempotent so duplicate callbacks cannot activate a subscription twice.
+1. Create an internal invoice.
+2. Start payment from the server.
+3. Store provider request identifiers.
+4. Verify callbacks.
+5. Make callback processing idempotent.
 6. Activate access only after confirmed payment.
-7. Record the complete transaction and audit trail.
+7. Record transaction and audit information.
 8. Generate a receipt.
-9. Handle timeouts, cancelled requests, failed transactions, refunds, and reconciliation.
+9. Handle failures, cancellations, timeouts, refunds, and reconciliation.
 
-Do not activate a subscription merely because the browser displays a successful message.
+Do not activate a subscription based only on a browser success message.
 
 ---
 
-## 12. Roles and permissions
+## 18. Security requirements
 
-Recommended initial roles:
+Security is a core LiteraHub requirement.
+
+Current and planned protections include:
+
+- role-based access control
+- active school membership checks
+- school/tenant scoping
+- active licence checks
+- book-right enforcement
+- protected resource streaming
+- download/print restrictions
+- session controls
+- rate limiting
+- reader activity logging
+- future device registration
+- future forensic watermarks
+- future server-rendered protected pages
+- audit logs
+- abuse detection
+
+### Important limitations
+
+No browser-based reader can fully prevent:
+
+- screenshots
+- photography of the screen
+- determined client-side extraction
+
+The objective is:
 
 ```text
-super_admin
-platform_admin
-content_manager
-author
-school_admin
-teacher
-student
-individual_subscriber
-finance
-support
+controlled access
++ deterrence
++ accountability
++ leak tracing
 ```
 
-Use policies and permissions for every protected action. Do not rely only on hiding buttons in the interface.
-
-Examples:
-
-- Only content managers may publish a resource.
-- Only authorised school administrators may add users to their school.
-- Teachers may assign only resources available under their school subscription.
-- Students may read only resources covered by an active entitlement.
-- Finance users may view payments but should not automatically gain content-management access.
+rather than claiming impossible absolute prevention.
 
 ---
 
-## 13. Multi-tenancy strategy
-
-The initial recommendation is **shared-database logical tenancy**:
-
-- Every institution-scoped record contains a `school_id` or equivalent tenant reference.
-- Queries are restricted by policies, scopes, and service-layer rules.
-- Platform administrators can work across schools only through explicit permissions.
-
-Do not create a separate database for every school during the MVP. It increases deployment, migration, backup, and reporting complexity. Separate databases can be considered later for enterprise customers with strict contractual isolation requirements.
-
----
-
-## 14. Resource protection
-
-Copyright protection is a core requirement. Implement the following before publishing licensed content:
-
-- Store original files in private object storage
-- Authorise every read and download request
-- Use short-lived signed links or stream files through an authorised endpoint
-- Add visible or forensic user/school watermarks where permitted
-- Log resource views, downloads, devices, and unusual access patterns
-- Restrict simultaneous sessions
-- Rate-limit high-risk endpoints
-- Define print, copy, text-to-speech, and download permissions per resource
-- Maintain licence and distribution-right records
-- Provide copyright complaint and takedown processes
-
-A web application cannot fully prevent screenshots. The practical objective is controlled access, deterrence, accountability, and leak tracing.
-
----
-
-## 15. Development commands
+## 19. Development commands
 
 ```bash
-# Start Laravel development server
+# Start Laravel locally
 php artisan serve
 
-# Start Vite development server
+# Start Vite
 npm run dev
 
-# Build production frontend assets
+# Production frontend build
 npm run build
 
-# Run database migrations
+# Run migrations
 php artisan migrate
 
-# Reset development database and seed it
+# Development reset
 php artisan migrate:fresh --seed
 
-# Run queue worker
+# Queue worker
 php artisan queue:work
 
-# Run scheduler locally
+# Scheduler
 php artisan schedule:work
 
-# Clear cached application state
+# Clear application caches
 php artisan optimize:clear
 
-# Run automated tests
-php artisan test
+# Cache production configuration
+php artisan config:cache
 
-# Check Laravel routes
+# Cache routes
+php artisan route:cache
+
+# Cache Blade templates
+php artisan view:cache
+
+# Show routes
 php artisan route:list
 
-# Apply Laravel code formatting
+# Tests
+php artisan test
+
+# Format PHP
 ./vendor/bin/pint
 ```
 
-On Windows PowerShell, Pint can be run with:
+Windows:
 
 ```powershell
 vendor\bin\pint
@@ -571,20 +954,26 @@ vendor\bin\pint
 
 ---
 
-## 16. Testing requirements
+## 20. Testing priorities
 
-Every major module should include:
+Every major module should eventually include:
 
-- Unit tests for domain rules
-- Feature tests for web and API endpoints
-- Permission and tenant-isolation tests
-- Payment callback and idempotency tests
-- Subscription expiry and renewal tests
-- Resource-entitlement tests
-- File-access security tests
-- Browser tests for high-value flows when practical
+- unit tests
+- feature tests
+- role/permission tests
+- tenant-isolation tests
+- licence-entitlement tests
+- reader access tests
+- borrowing lifecycle tests
+- concurrent-loan tests
+- assignment workflow tests
+- assignment submission/grading tests
+- payment callback/idempotency tests
+- subscription expiry tests
+- file access/security tests
+- browser tests for critical workflows
 
-Before merging work:
+Before merging:
 
 ```bash
 php artisan test
@@ -592,271 +981,335 @@ npm run build
 ./vendor/bin/pint --test
 ```
 
-The included GitHub Actions workflow should be expanded as dependencies and services are completed.
+---
+
+## 21. Current MVP roadmap
+
+### Completed / operational foundation
+
+- Laravel application
+- authentication
+- roles
+- dashboards
+- publishers
+- authors
+- books
+- review workflow
+- publication workflow
+- licence issuance
+- licence renewal/revocation
+- school library
+- student class-aware access
+- access requests
+- borrowing
+- returning
+- bookmarks
+- PDF.js protected reader
+- basic school management
+- assignment CRUD foundation
+- temporary cPanel demonstration deployment
+
+### Current priority
+
+**Teacher → Student assignment workflow**
+
+Work currently includes:
+
+1. licensed-book assignment
+2. reading ranges
+3. assignment start/due dates
+4. marks
+5. student assignment list
+6. student response
+7. teacher grading
+8. feedback
+
+### Next MVP priorities
+
+1. Complete assignment submission and grading
+2. Continue-reading history
+3. Student bookmark dashboard
+4. Teacher learner-activity views
+5. School admin reporting
+6. Subscription/payment status
+7. M-Pesa sandbox integration
+8. Demo data and end-to-end testing
+9. Security hardening
+10. Pilot deployment
+
+### Deferred until after MVP
+
+- automatic PDF TOC generation
+- OCR/AI chapter detection
+- server-rendered page reader
+- full device-registration system
+- forensic watermark pipeline
+- advanced quizzes
+- plagiarism detection
+- AI marking
+- offline/PWA reading
+- native mobile applications
+- advanced analytics
 
 ---
 
-## 17. Recommended development sequence
+## 22. Demonstration flow
 
-### Phase 1: Foundation
+The target MVP demonstration should show:
 
-1. Install and verify the starter application.
-2. Add authentication scaffolding.
-3. Configure Spatie roles and permissions.
-4. Complete school membership and tenant scopes.
-5. Add audit logging.
-6. Create Filament platform-admin and school-admin panels.
+```text
+Super Admin
+   ↓
+Create / Manage Publisher
+   ↓
+Create / Manage Author
+   ↓
+Upload Book
+   ↓
+Review
+   ↓
+Approve
+   ↓
+Publish
+   ↓
+Issue School Licence
+   ↓
+Teacher Logs In
+   ↓
+Browse Licensed Library
+   ↓
+Create Assignment
+   ↓
+Student Logs In
+   ↓
+View School Library
+   ↓
+Borrow Book
+   ↓
+Read Online
+   ↓
+Bookmark
+   ↓
+Open Assignment
+   ↓
+Submit Work
+   ↓
+Teacher Grades + Feedback
+```
 
-### Phase 2: Content library
-
-1. Add authors, publishers, categories, education levels, subjects, and editions.
-2. Implement private resource uploads.
-3. Add resource approval and publication workflows.
-4. Implement subscription-tier entitlements.
-5. Build catalogue, search, filters, and resource details.
-
-### Phase 3: Billing
-
-1. Complete plans, invoices, payments, and subscriptions.
-2. Implement M-Pesa sandbox integration.
-3. Add verified and idempotent callbacks.
-4. Add card and manual bank-payment adapters.
-5. Add receipts, renewal reminders, expiry, and grace periods.
-
-### Phase 4: Reader and learning
-
-1. Build PDF and EPUB readers.
-2. Add progress, bookmarks, notes, and highlights.
-3. Add classes and reading lists.
-4. Add assignments, quizzes, submissions, and grading.
-5. Add reporting dashboards.
-
-### Phase 5: Pilot and launch
-
-1. Perform security and load testing.
-2. Import a limited approved content catalogue.
-3. Pilot with two to five schools.
-4. Measure onboarding, payment, reading, and support performance.
-5. Resolve critical defects before wider launch.
-
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the detailed 24-week roadmap.
+This is the primary product story for the MVP.
 
 ---
 
-## 18. Git workflow
+## 23. Demo data
+
+Development/demo environments may contain seeded accounts for:
+
+- super administrator
+- platform administrator
+- content manager
+- finance
+- support
+- authors
+- school administrator
+- teachers
+- students
+- individual reader
+
+Demo credentials must never be reused in production.
+
+A dedicated `DemoSeeder` is recommended so the demonstration environment can be recreated safely without relying on broad development seeders.
+
+---
+
+## 24. Git workflow
 
 Recommended branches:
 
 ```text
-main       Production-ready code
-develop    Integrated development work
-feature/*  New modules and features
-fix/*      Bug fixes
-hotfix/*   Urgent production fixes
+main
+develop
+feature/*
+fix/*
+hotfix/*
 ```
 
 Example:
 
 ```bash
-git checkout -b feature/school-registration
-# make changes
+git checkout -b feature/assignment-submissions
+
 git add .
-git commit -m "feat: add school registration"
-git push -u origin feature/school-registration
+
+git commit -m "feat: add student assignment submission workflow"
+
+git push -u origin feature/assignment-submissions
 ```
 
-Open a pull request into `develop`, review and test it, then merge. Promote tested releases from `develop` to `main`.
-
----
-
-## 19. Publishing to GitHub
-
-Create an empty private repository named `literahub-platform` under the appropriate Ligco Technologies or GitHub account.
-
-```bash
-git init
-git add .
-git commit -m "chore: initialise LiteraHub platform"
-git branch -M main
-git remote add origin https://github.com/OWNER/literahub-platform.git
-git push -u origin main
-```
-
-Using GitHub CLI:
-
-```bash
-gh auth login
-gh repo create literahub-platform --private --source=. --remote=origin --push
-```
+Open a pull request into `develop`, test, then promote stable releases to `main`.
 
 Do not commit:
 
 - `.env`
-- API secrets
+- secrets
+- API keys
 - payment credentials
 - production database exports
-- private books or licensed resources
+- private copyrighted books
 - user uploads
 - `vendor/`
 - `node_modules/`
 
 ---
 
-## 20. Production deployment checklist
+## 25. Production-readiness checklist
 
-Before launch:
+Before a public production launch:
 
-- Use a dedicated production domain with HTTPS
-- Set `APP_ENV=production` and `APP_DEBUG=false`
-- Use strong database and Redis credentials
-- Configure private S3-compatible storage
-- Run queue workers under a process manager
-- Configure the scheduler
-- Configure real mail and SMS providers
-- Encrypt and back up databases and protected files
-- Test backup restoration
-- Add application, uptime, error, and infrastructure monitoring
-- Configure rate limiting and a web application firewall where available
-- Configure session and device policies
-- Review all roles and permissions
-- Verify all payment callbacks and reconciliation
-- Run penetration, permission, tenant-isolation, and load tests
-- Prepare privacy, copyright, acceptable-use, subscription, refund, and support policies
-- Document incident-response and account-recovery procedures
-
-Typical deployment commands:
-
-```bash
-composer install --no-dev --optimize-autoloader
-npm ci
-npm run build
-php artisan migrate --force
-php artisan storage:link
-php artisan optimize
-php artisan queue:restart
-```
-
-`storage:link` should only expose intentionally public assets such as public profile images or covers. Protected books must remain on a private disk.
-
----
-
-## 21. Backup and maintenance
-
-Recommended minimum:
-
-- Daily encrypted database backup
-- Versioned private-object-storage backup
-- Weekly restoration test or automated restore verification
-- Retention policy covering daily, weekly, and monthly recovery points
-- Centralised logs and error monitoring
-- Monthly dependency and security review
-- Regular access review for platform administrators
-
-Maintenance mode:
-
-```bash
-php artisan down --secret="temporary-access-token"
-# deploy and migrate
-php artisan up
-```
+- dedicated production domain
+- HTTPS everywhere
+- `APP_ENV=production`
+- `APP_DEBUG=false`
+- secure MySQL/PostgreSQL credentials
+- Redis or equivalent production cache/session backend
+- private S3-compatible protected storage
+- production queue workers
+- scheduler
+- production email
+- M-Pesa/card integration
+- backups
+- restoration testing
+- application monitoring
+- error monitoring
+- rate limiting
+- WAF where practical
+- audit logging
+- tenant isolation review
+- role/permission review
+- licence-rule tests
+- reader-access tests
+- payment reconciliation
+- penetration testing
+- load testing
+- privacy policy
+- copyright policy
+- acceptable-use policy
+- subscription/refund terms
+- incident-response process
 
 ---
 
-## 22. Troubleshooting
+## 26. Troubleshooting
 
-### `PHP was not found`
+### Home page works but subpages return 404
 
-Install PHP and make sure its directory is included in the system `PATH`. Restart the terminal after updating environment variables.
-
-### `composer was not found`
-
-Install Composer globally and verify:
+Run:
 
 ```bash
-composer --version
+php artisan route:list
 ```
 
-### `APP_KEY is missing`
+If Laravel shows the routes but Apache returns 404, check:
+
+- root `.htaccess`
+- `public/.htaccess`
+- Apache `mod_rewrite`
+- `AllowOverride`
+- hosting document root
+
+### `APP_KEY` missing
 
 ```bash
 php artisan key:generate
 ```
 
-### SQLite database errors
-
-Make sure the file exists:
+### Environment changes ignored
 
 ```bash
-touch database/database.sqlite
+php artisan optimize:clear
 ```
 
-PowerShell:
-
-```powershell
-New-Item database/database.sqlite -ItemType File -Force
-```
-
-### MySQL access denied
-
-Check `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD`, then run:
-
-```bash
-php artisan config:clear
-```
-
-### Vite manifest not found
+### Vite manifest missing
 
 ```bash
 npm install
 npm run build
 ```
 
-During development, keep `npm run dev` running.
+### MySQL access denied
 
-### Changes to `.env` are ignored
+Verify:
+
+```text
+DB_HOST
+DB_PORT
+DB_DATABASE
+DB_USERNAME
+DB_PASSWORD
+```
+
+then:
 
 ```bash
-php artisan optimize:clear
+php artisan config:clear
+```
+
+### File upload temporary directory error
+
+On environments where PHP reports:
+
+```text
+File upload error - unable to create a temporary file
+```
+
+verify PHP's configured upload temporary directory is valid and writable.
+
+Development example:
+
+```ini
+file_uploads = On
+upload_tmp_dir = "C:\php-temp\uploads"
+sys_temp_dir = "C:\php-temp"
+upload_max_filesize = 20M
+post_max_size = 25M
 ```
 
 ### Queue jobs do not run
 
 ```bash
+php artisan queue:failed
 php artisan queue:work
 ```
 
-Then verify the queue connection and failed jobs:
-
-```bash
-php artisan queue:failed
-```
+On cPanel, verify the cron-based worker.
 
 ---
 
-## 23. Documentation
-
-- [Product requirements](docs/PRODUCT_REQUIREMENTS.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Database design](docs/DATABASE.md)
-- [Security](docs/SECURITY.md)
-- [Development workflow](docs/DEVELOPMENT_WORKFLOW.md)
-- [Roadmap](docs/ROADMAP.md)
-
----
-
-## 24. Ownership and licence
+## 27. Ownership and licence
 
 Copyright © 2026 **Ligco Technologies**.
 
-This project is private and proprietary. Source code, designs, documentation, and business logic may not be copied, redistributed, sublicensed, sold, or deployed for third parties without written permission from Ligco Technologies and the project owner.
+LiteraHub is private and proprietary software.
+
+Source code, designs, business logic, documentation, protected content workflows, and deployment artefacts may not be copied, redistributed, sublicensed, sold, or deployed for third parties without written permission from Ligco Technologies and the project owner.
 
 Third-party libraries remain subject to their respective licences.
 
+Authors and publishers retain intellectual-property rights in their content according to the rights and distribution agreements recorded by the platform.
+
 ---
 
-## 25. Author
+## 28. Project stewardship
 
 **Ligco Technologies**  
 Software, ERP, POS, cloud, and digital-platform development.
 
-Project stewardship, implementation, and technical documentation are attributed to Ligco Technologies.
+LiteraHub product design, engineering, implementation, architecture, security model, and technical documentation are managed under Ligco Technologies.
+
+---
+
+## 29. Current project note
+
+This README reflects the active MVP as of the current development cycle.
+
+The project is under continuous development. Sections describing assignments, subscriptions, payments, reporting, secure content rendering, and production infrastructure should be updated as those modules move from scaffolded or partial state to complete implementation.
