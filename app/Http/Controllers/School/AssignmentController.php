@@ -47,6 +47,11 @@ class AssignmentController extends Controller
     |--------------------------------------------------------------------------
     | Resolve Assignment
     |--------------------------------------------------------------------------
+    |
+    | School administrators may access assignments within their school.
+    |
+    | Teachers may only access assignments they created.
+    |
     */
 
     private function assignment(
@@ -59,11 +64,6 @@ class AssignmentController extends Controller
             ->whereKey($id);
 
 
-        /*
-         * Teachers may only manage assignments they created.
-         *
-         * School admins may manage all assignments in the school.
-         */
         if (
             $request
                 ->user()
@@ -83,20 +83,18 @@ class AssignmentController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | Index
+    | Assignment Index
     |--------------------------------------------------------------------------
     */
 
     public function index(
         Request $request
     ): View {
-        $user =
-            $request->user();
+        $user = $request->user();
 
-        $school =
-            $this->school(
-                $request
-            );
+        $school = $this->school(
+            $request
+        );
 
 
         $search = trim(
@@ -120,9 +118,30 @@ class AssignmentController extends Controller
             ->with([
                 'schoolClass',
                 'creator',
+                'book',
             ])
             ->withCount([
                 'students',
+
+                'submissions',
+
+                'submissions as submitted_count' =>
+                    fn (Builder $query) =>
+                        $query->whereIn(
+                            'status',
+                            [
+                                'submitted',
+                                'late',
+                                'graded',
+                            ]
+                        ),
+
+                'submissions as graded_count' =>
+                    fn (Builder $query) =>
+                        $query->where(
+                            'status',
+                            'graded'
+                        ),
             ]);
 
 
@@ -169,6 +188,30 @@ class AssignmentController extends Controller
                                 'instructions',
                                 'like',
                                 "%{$search}%"
+                            )
+                            ->orWhereHas(
+                                'book',
+                                function (
+                                    Builder $query
+                                ) use ($search) {
+                                    $query->where(
+                                        'title',
+                                        'like',
+                                        "%{$search}%"
+                                    );
+                                }
+                            )
+                            ->orWhereHas(
+                                'schoolClass',
+                                function (
+                                    Builder $query
+                                ) use ($search) {
+                                    $query->where(
+                                        'name',
+                                        'like',
+                                        "%{$search}%"
+                                    );
+                                }
                             );
                     }
                 );
@@ -178,7 +221,7 @@ class AssignmentController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Status
+        | Status Filter
         |--------------------------------------------------------------------------
         */
 
@@ -219,98 +262,29 @@ class AssignmentController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | Create
+    | Create Assignment
     |--------------------------------------------------------------------------
     */
 
     public function create(
         Request $request
     ): View {
-        $user =
-            $request->user();
+        $user = $request->user();
 
-        $school =
-            $this->school(
-                $request
-            );
+        $school = $this->school(
+            $request
+        );
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Classes
-        |--------------------------------------------------------------------------
-        |
-        | School admin:
-        |     all active classes
-        |
-        | Teacher:
-        |     only classes assigned to the teacher
-        |
-        */
-
-        if (
-            $user->hasRole(
-                'teacher'
-            )
-            &&
-            method_exists(
-                $user,
-                'teacherClasses'
-            )
-        ) {
-            $classes = $user
-                ->teacherClasses()
-                ->where(
-                    'school_classes.school_id',
-                    $school->id
-                )
-                ->where(
-                    'school_classes.status',
-                    'active'
-                )
-                ->orderBy(
-                    'school_classes.name'
-                )
-                ->get();
-        } else {
-            $classes = $school
-                ->classes()
-                ->where(
-                    'status',
-                    'active'
-                )
-                ->orderBy(
-                    'name'
-                )
-                ->get();
-        }
+        $classes = $this->availableClasses(
+            $request,
+            $school
+        );
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Licensed Books
-        |--------------------------------------------------------------------------
-        */
-
-        $books = $this->licenses
-            ->licensedBooksQuery(
-                $school
-            )
-            ->where(
-                'status',
-                'published'
-            )
-            ->where(
-                'allow_teacher_assignment',
-                true
-            )
-            ->with([
-                'authors',
-            ])
-            ->orderBy(
-                'title'
-            )
-            ->get();
+        $books = $this->availableBooks(
+            $school
+        );
 
 
         return view(
@@ -326,24 +300,22 @@ class AssignmentController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | Store
+    | Store Assignment
     |--------------------------------------------------------------------------
     */
 
     public function store(
         Request $request
     ): RedirectResponse {
-        $school =
-            $this->school(
-                $request
-            );
+        $school = $this->school(
+            $request
+        );
 
 
-        $validated =
-            $this->validated(
-                $request,
-                $school
-            );
+        $validated = $this->validated(
+            $request,
+            $school
+        );
 
 
         /*
@@ -352,14 +324,13 @@ class AssignmentController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $class =
-            $this->resolveClass(
-                $request,
-                $school,
-                $validated[
-                    'school_class_id'
-                ]
-            );
+        $class = $this->resolveClass(
+            $request,
+            $school,
+            $validated[
+                'school_class_id'
+            ]
+        );
 
 
         /*
@@ -384,47 +355,53 @@ class AssignmentController extends Controller
         }
 
 
-        $assignment =
-            DB::transaction(
-                function () use (
-                    $request,
-                    $school,
-                    $validated,
-                    $class
-                ) {
-                    $assignment = $school
-                        ->assignments()
-                        ->create([
-                            ...$validated,
+        /*
+        |--------------------------------------------------------------------------
+        | Create Assignment
+        |--------------------------------------------------------------------------
+        */
 
-                            'creator_id' =>
-                                $request
-                                    ->user()
-                                    ->id,
-                        ]);
+        $assignment = DB::transaction(
+            function () use (
+                $request,
+                $school,
+                $validated,
+                $class
+            ) {
+                $assignment = $school
+                    ->assignments()
+                    ->create([
+                        ...$validated,
 
-
-                    /*
-                     * Snapshot the current learners in the class.
-                     */
-                    $studentIds = $class
-                        ->students()
-                        ->pluck(
-                            'users.id'
-                        )
-                        ->all();
+                        'creator_id' =>
+                            $request
+                                ->user()
+                                ->id,
+                    ]);
 
 
-                    $assignment
-                        ->students()
-                        ->sync(
-                            $studentIds
-                        );
+                /*
+                 * Snapshot the current students assigned
+                 * to the selected class.
+                 */
+                $studentIds = $class
+                    ->students()
+                    ->pluck(
+                        'users.id'
+                    )
+                    ->all();
 
 
-                    return $assignment;
-                }
-            );
+                $assignment
+                    ->students()
+                    ->sync(
+                        $studentIds
+                    );
+
+
+                return $assignment;
+            }
+        );
 
 
         return redirect()
@@ -436,15 +413,15 @@ class AssignmentController extends Controller
                 'success',
                 $assignment->status
                     === 'published'
-                        ? 'Assignment published successfully.'
-                        : 'Assignment saved successfully.'
+                    ? 'Assignment published successfully.'
+                    : 'Assignment saved successfully.'
             );
     }
 
 
     /*
     |--------------------------------------------------------------------------
-    | Show
+    | Show Assignment
     |--------------------------------------------------------------------------
     */
 
@@ -452,55 +429,74 @@ class AssignmentController extends Controller
         Request $request,
         int $assignment
     ): View {
-        $school =
-            $this->school(
-                $request
-            );
+        $school = $this->school(
+            $request
+        );
 
 
-        $assignment =
-            $this->assignment(
-                $request,
-                $school,
-                $assignment
-            );
+        $assignment = $this->assignment(
+            $request,
+            $school,
+            $assignment
+        );
 
 
         $assignment->load([
             'schoolClass',
             'creator',
-            'students',
+
+            'students' =>
+                fn ($query) =>
+                    $query->orderBy(
+                        'name'
+                    ),
+
+            'book.authors',
+            'book.publisher',
+
+            'submissions' =>
+                fn ($query) =>
+                    $query
+                        ->with([
+                            'student',
+                            'grader',
+                        ])
+                        ->latest(
+                            'updated_at'
+                        ),
         ]);
 
 
-        /*
-         * Load book manually while resource_id remains
-         * the current assignment column.
-         */
-        $book = null;
+        $assignment->loadCount([
+            'students',
 
+            'submissions',
 
-        if (
-            $assignment->resource_id
-        ) {
-            $book = Book::query()
-                ->with([
-                    'authors',
-                    'publisher',
-                ])
-                ->find(
-                    $assignment
-                        ->resource_id
-                );
-        }
+            'submissions as submitted_count' =>
+                fn ($query) =>
+                    $query->whereIn(
+                        'status',
+                        [
+                            'submitted',
+                            'late',
+                            'graded',
+                        ]
+                    ),
+
+            'submissions as graded_count' =>
+                fn ($query) =>
+                    $query->where(
+                        'status',
+                        'graded'
+                    ),
+        ]);
 
 
         return view(
             'school.assignments.show',
             compact(
                 'school',
-                'assignment',
-                'book'
+                'assignment'
             )
         );
     }
@@ -508,7 +504,7 @@ class AssignmentController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | Edit
+    | Edit Assignment
     |--------------------------------------------------------------------------
     */
 
@@ -516,80 +512,28 @@ class AssignmentController extends Controller
         Request $request,
         int $assignment
     ): View {
-        $user =
-            $request->user();
-
-        $school =
-            $this->school(
-                $request
-            );
+        $school = $this->school(
+            $request
+        );
 
 
-        $assignment =
-            $this->assignment(
-                $request,
-                $school,
-                $assignment
-            );
+        $assignment = $this->assignment(
+            $request,
+            $school,
+            $assignment
+        );
 
 
-        if (
-            $user->hasRole(
-                'teacher'
-            )
-            &&
-            method_exists(
-                $user,
-                'teacherClasses'
-            )
-        ) {
-            $classes = $user
-                ->teacherClasses()
-                ->where(
-                    'school_classes.school_id',
-                    $school->id
-                )
-                ->where(
-                    'school_classes.status',
-                    'active'
-                )
-                ->orderBy(
-                    'school_classes.name'
-                )
-                ->get();
-        } else {
-            $classes = $school
-                ->classes()
-                ->where(
-                    'status',
-                    'active'
-                )
-                ->orderBy(
-                    'name'
-                )
-                ->get();
-        }
+        $classes = $this->availableClasses(
+            $request,
+            $school
+        );
 
 
-        $books = $this->licenses
-            ->licensedBooksQuery(
-                $school
-            )
-            ->where(
-                'status',
-                'published'
-            )
-            ->where(
-                'allow_teacher_assignment',
-                true
-            )
-            ->with([
-                'authors',
-            ])
-            ->orderBy(
-                'title'
-            )
-            ->get();
+        $books = $this->availableBooks(
+            $school,
+            $assignment->resource_id
+        );
 
 
         return view(
@@ -606,7 +550,7 @@ class AssignmentController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | Update
+    | Update Assignment
     |--------------------------------------------------------------------------
     */
 
@@ -614,35 +558,31 @@ class AssignmentController extends Controller
         Request $request,
         int $assignment
     ): RedirectResponse {
-        $school =
-            $this->school(
-                $request
-            );
+        $school = $this->school(
+            $request
+        );
 
 
-        $assignment =
-            $this->assignment(
-                $request,
-                $school,
-                $assignment
-            );
+        $assignment = $this->assignment(
+            $request,
+            $school,
+            $assignment
+        );
 
 
-        $validated =
-            $this->validated(
-                $request,
-                $school
-            );
+        $validated = $this->validated(
+            $request,
+            $school
+        );
 
 
-        $class =
-            $this->resolveClass(
-                $request,
-                $school,
-                $validated[
-                    'school_class_id'
-                ]
-            );
+        $class = $this->resolveClass(
+            $request,
+            $school,
+            $validated[
+                'school_class_id'
+            ]
+        );
 
 
         if (
@@ -672,15 +612,22 @@ class AssignmentController extends Controller
                 );
 
 
+                /*
+                 * Keep assignment recipients synchronized
+                 * with the selected class.
+                 */
+                $studentIds = $class
+                    ->students()
+                    ->pluck(
+                        'users.id'
+                    )
+                    ->all();
+
+
                 $assignment
                     ->students()
                     ->sync(
-                        $class
-                            ->students()
-                            ->pluck(
-                                'users.id'
-                            )
-                            ->all()
+                        $studentIds
                     );
             }
         );
@@ -700,7 +647,7 @@ class AssignmentController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | Archive
+    | Archive Assignment
     |--------------------------------------------------------------------------
     */
 
@@ -708,18 +655,16 @@ class AssignmentController extends Controller
         Request $request,
         int $assignment
     ): RedirectResponse {
-        $school =
-            $this->school(
-                $request
-            );
+        $school = $this->school(
+            $request
+        );
 
 
-        $assignment =
-            $this->assignment(
-                $request,
-                $school,
-                $assignment
-            );
+        $assignment = $this->assignment(
+            $request,
+            $school,
+            $assignment
+        );
 
 
         if (
@@ -741,6 +686,122 @@ class AssignmentController extends Controller
                 'success',
                 'Assignment archived.'
             );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Available Classes
+    |--------------------------------------------------------------------------
+    |
+    | School admins receive every active class in the school.
+    |
+    | Teachers receive only active classes they are assigned to.
+    |
+    */
+
+    private function availableClasses(
+        Request $request,
+        School $school
+    ) {
+        $user = $request->user();
+
+
+        if (
+            $user->hasRole(
+                'teacher'
+            )
+            &&
+            method_exists(
+                $user,
+                'teacherClasses'
+            )
+        ) {
+            return $user
+                ->teacherClasses()
+                ->where(
+                    'school_classes.school_id',
+                    $school->id
+                )
+                ->where(
+                    'school_classes.status',
+                    'active'
+                )
+                ->orderBy(
+                    'school_classes.name'
+                )
+                ->get();
+        }
+
+
+        return $school
+            ->classes()
+            ->where(
+                'status',
+                'active'
+            )
+            ->orderBy(
+                'name'
+            )
+            ->get();
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Available Books
+    |--------------------------------------------------------------------------
+    |
+    | Only actively licensed, published books that explicitly
+    | permit teacher assignment are selectable.
+    |
+    | When editing an assignment, the currently selected book
+    | may be included if required for display consistency.
+    |
+    */
+
+    private function availableBooks(
+        School $school,
+        int|string|null $currentBookId = null
+    ) {
+        $query = $this->licenses
+            ->licensedBooksQuery(
+                $school
+            )
+            ->where(
+                'status',
+                'published'
+            )
+            ->where(
+                'allow_teacher_assignment',
+                true
+            )
+            ->with([
+                'authors',
+                'publisher',
+            ]);
+
+
+        /*
+         * Normally the active licensed catalogue is sufficient.
+         *
+         * The parameter is retained for future handling of assignments
+         * whose book licence expires after the assignment was created.
+         */
+        if ($currentBookId) {
+            // Intentionally no licence bypass here.
+            //
+            // Existing assignments continue to reference their book,
+            // but edit forms only expose books currently valid for
+            // assignment.
+        }
+
+
+        return $query
+            ->orderBy(
+                'title'
+            )
+            ->get();
     }
 
 
@@ -768,8 +829,8 @@ class AssignmentController extends Controller
 
 
         /*
-         * A teacher may only assign work to
-         * classes they actually teach.
+         * A teacher may only create assignments
+         * for classes they actually teach.
          */
         if (
             $request
@@ -777,20 +838,28 @@ class AssignmentController extends Controller
                 ->hasRole(
                     'teacher'
                 )
-            &&
-            method_exists(
-                $request->user(),
-                'teacherClasses'
-            )
         ) {
-            $allowed =
-                $request
-                    ->user()
-                    ->teacherClasses()
-                    ->whereKey(
-                        $class->id
-                    )
-                    ->exists();
+            abort_unless(
+                method_exists(
+                    $request->user(),
+                    'teacherClasses'
+                ),
+                403,
+                'Teacher class assignments are not configured.'
+            );
+
+
+            $allowed = $request
+                ->user()
+                ->teacherClasses()
+                ->where(
+                    'school_classes.school_id',
+                    $school->id
+                )
+                ->whereKey(
+                    $class->id
+                )
+                ->exists();
 
 
             abort_unless(
@@ -855,7 +924,13 @@ class AssignmentController extends Controller
         Request $request,
         School $school
     ): array {
-        return $request->validate([
+        $validated = $request->validate([
+
+            /*
+            |--------------------------------------------------------------------------
+            | Assignment
+            |--------------------------------------------------------------------------
+            */
 
             'title' => [
                 'required',
@@ -863,6 +938,12 @@ class AssignmentController extends Controller
                 'max:255',
             ],
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Class
+            |--------------------------------------------------------------------------
+            */
 
             'school_class_id' => [
                 'required',
@@ -882,10 +963,16 @@ class AssignmentController extends Controller
 
 
             /*
-             * resource_id currently represents a Book.
-             *
-             * We should rename this to book_id later.
-             */
+            |--------------------------------------------------------------------------
+            | Assigned Book
+            |--------------------------------------------------------------------------
+            |
+            | resource_id currently references books.id.
+            |
+            | We can rename this field to book_id in a later schema migration.
+            |
+            */
+
             'resource_id' => [
                 'nullable',
                 'integer',
@@ -896,16 +983,31 @@ class AssignmentController extends Controller
                 ),
             ],
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Instructions
+            |--------------------------------------------------------------------------
+            */
+
             'instructions' => [
                 'nullable',
                 'string',
                 'max:20000',
             ],
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Availability
+            |--------------------------------------------------------------------------
+            */
+
             'starts_at' => [
                 'nullable',
                 'date',
             ],
+
 
             'due_at' => [
                 'nullable',
@@ -913,11 +1015,19 @@ class AssignmentController extends Controller
                 'after_or_equal:starts_at',
             ],
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Reading Range
+            |--------------------------------------------------------------------------
+            */
+
             'start_page' => [
                 'nullable',
                 'integer',
                 'min:1',
             ],
+
 
             'end_page' => [
                 'nullable',
@@ -926,12 +1036,26 @@ class AssignmentController extends Controller
                 'gte:start_page',
             ],
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Marks
+            |--------------------------------------------------------------------------
+            */
+
             'total_marks' => [
                 'nullable',
                 'integer',
                 'min:1',
                 'max:1000',
             ],
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Status
+            |--------------------------------------------------------------------------
+            */
 
             'status' => [
                 'required',
@@ -945,5 +1069,76 @@ class AssignmentController extends Controller
             ],
 
         ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Page Range Validation Against Book
+        |--------------------------------------------------------------------------
+        |
+        | Laravel validation ensures start_page <= end_page.
+        |
+        | Here we additionally ensure the selected pages do not exceed
+        | the known page count of the assigned book.
+        |
+        */
+
+        if (
+            ! empty(
+                $validated[
+                    'resource_id'
+                ]
+            )
+        ) {
+            $book = $this->resolveLicensedBook(
+                $school,
+                $validated[
+                    'resource_id'
+                ]
+            );
+
+
+            if (
+                $book->page_count
+                &&
+                ! empty(
+                    $validated[
+                        'start_page'
+                    ]
+                )
+                &&
+                $validated[
+                    'start_page'
+                ] > $book->page_count
+            ) {
+                throw ValidationException::withMessages([
+                    'start_page' =>
+                        "The start page cannot exceed the book's {$book->page_count} pages.",
+                ]);
+            }
+
+
+            if (
+                $book->page_count
+                &&
+                ! empty(
+                    $validated[
+                        'end_page'
+                    ]
+                )
+                &&
+                $validated[
+                    'end_page'
+                ] > $book->page_count
+            ) {
+                throw ValidationException::withMessages([
+                    'end_page' =>
+                        "The end page cannot exceed the book's {$book->page_count} pages.",
+                ]);
+            }
+        }
+
+
+        return $validated;
     }
 }
