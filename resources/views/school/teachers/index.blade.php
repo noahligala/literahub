@@ -252,13 +252,13 @@
                                 {{-- Classes --}}
                                 <td>
 
-                                    @if($teacher->teachingClasses->count())
+                                    @if($teacher->teacherClasses->count())
 
                                         <div class="teacher-class-list">
 
                                             @foreach(
                                                 $teacher
-                                                    ->teachingClasses
+                                                    ->teacherClasses
                                                     ->take(2)
                                                 as $class
                                             )
@@ -278,16 +278,16 @@
 
                                             @if(
                                                 $teacher
-                                                    ->teachingClasses
+                                                    ->teacherClasses
                                                     ->count() > 2
                                             )
 
                                                 <span
                                                     class="badge"
-                                                    title="{{ $teacher->teachingClasses->count() - 2 }} more classes"
+                                                    title="{{ $teacher->teacherClasses->count() - 2 }} more classes"
                                                 >
                                                     +{{ $teacher
-                                                        ->teachingClasses
+                                                        ->teacherClasses
                                                         ->count() - 2
                                                     }}
                                                 </span>

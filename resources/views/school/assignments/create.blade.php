@@ -24,7 +24,10 @@
 
     @if ($errors->any())
 
-        <div class="alert alert--error">
+        <div
+            class="alert alert--error"
+            role="alert"
+        >
 
             <strong>
                 Please correct the following:
@@ -70,6 +73,7 @@
             >
                 Create Assignment
             </button>
+
 
             <a
                 href="{{ route(

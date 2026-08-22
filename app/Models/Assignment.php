@@ -30,6 +30,9 @@ class Assignment extends Model
         'total_marks',
 
         'status',
+        'late_submission_policy',
+        'late_penalty_type',
+        'late_penalty_value',
     ];
 
     protected function casts(): array
@@ -41,6 +44,7 @@ class Assignment extends Model
             'start_page' => 'integer',
             'end_page' => 'integer',
             'total_marks' => 'integer',
+            'late_penalty_value' => 'decimal:2',
         ];
     }
 
@@ -127,5 +131,50 @@ class Assignment extends Model
         return $this->isPublished()
             && ! $this->isClosed()
             && $this->hasStarted();
+    }
+
+    public function allowsLateSubmissions(): bool
+    {
+        return $this->late_submission_policy !== 'reject';
+    }
+
+
+    public function rejectsLateSubmissions(): bool
+    {
+        return $this->late_submission_policy === 'reject';
+    }
+
+
+    public function penalizesLateSubmissions(): bool
+    {
+        return $this->late_submission_policy === 'allow_with_penalty';
+    }
+
+
+    public function isPastDeadline(): bool
+    {
+        return $this->due_at
+            && now()->greaterThan($this->due_at);
+    }
+
+
+    public function acceptsStudentSubmission(): bool
+    {
+        if (! $this->isPublished()) {
+            return false;
+        }
+
+        if (! $this->hasStarted()) {
+            return false;
+        }
+
+        if (
+            $this->isPastDeadline()
+            && $this->rejectsLateSubmissions()
+        ) {
+            return false;
+        }
+
+        return true;
     }
 }

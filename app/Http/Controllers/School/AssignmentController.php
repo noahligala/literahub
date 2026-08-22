@@ -269,8 +269,6 @@ class AssignmentController extends Controller
     public function create(
         Request $request
     ): View {
-        $user = $request->user();
-
         $school = $this->school(
             $request
         );
@@ -969,7 +967,8 @@ class AssignmentController extends Controller
             |
             | resource_id currently references books.id.
             |
-            | We can rename this field to book_id in a later schema migration.
+            | The licence/assignment entitlement is verified again below through
+            | BookLicenseService. A raw books.id match is never sufficient.
             |
             */
 
@@ -1053,6 +1052,64 @@ class AssignmentController extends Controller
 
             /*
             |--------------------------------------------------------------------------
+            | Late Submission Policy
+            |--------------------------------------------------------------------------
+            |
+            | allow
+            |     Accept late work without an automatic penalty.
+            |
+            | allow_with_penalty
+            |     Accept late work and apply the configured penalty when grading.
+            |
+            | reject
+            |     The student submission controller must block final submission
+            |     after due_at.
+            |
+            */
+
+            'late_submission_policy' => [
+                'required',
+
+                Rule::in([
+                    'allow',
+                    'allow_with_penalty',
+                    'reject',
+                ]),
+            ],
+
+
+            'late_penalty_type' => [
+                'nullable',
+
+                Rule::requiredIf(
+                    $request->input(
+                        'late_submission_policy'
+                    ) === 'allow_with_penalty'
+                ),
+
+                Rule::in([
+                    'percentage',
+                    'fixed',
+                ]),
+            ],
+
+
+            'late_penalty_value' => [
+                'nullable',
+
+                Rule::requiredIf(
+                    $request->input(
+                        'late_submission_policy'
+                    ) === 'allow_with_penalty'
+                ),
+
+                'numeric',
+                'min:0',
+            ],
+
+
+            /*
+            |--------------------------------------------------------------------------
             | Status
             |--------------------------------------------------------------------------
             */
@@ -1073,13 +1130,91 @@ class AssignmentController extends Controller
 
         /*
         |--------------------------------------------------------------------------
+        | Normalize Late Policy
+        |--------------------------------------------------------------------------
+        |
+        | Penalty fields should never retain stale values if the teacher changes
+        | the assignment back to ordinary late acceptance or rejects late work.
+        |
+        */
+
+        if (
+            $validated[
+                'late_submission_policy'
+            ] !== 'allow_with_penalty'
+        ) {
+            $validated[
+                'late_penalty_type'
+            ] = null;
+
+            $validated[
+                'late_penalty_value'
+            ] = null;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Late Penalty
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $validated[
+                'late_submission_policy'
+            ] === 'allow_with_penalty'
+        ) {
+            $penaltyType =
+                $validated[
+                    'late_penalty_type'
+                ];
+
+            $penaltyValue =
+                (float) $validated[
+                    'late_penalty_value'
+                ];
+
+
+            if (
+                $penaltyType === 'percentage'
+                && $penaltyValue > 100
+            ) {
+                throw ValidationException::withMessages([
+                    'late_penalty_value' =>
+                        'A percentage late penalty cannot exceed 100%.',
+                ]);
+            }
+
+
+            if (
+                $penaltyType === 'fixed'
+                && ! empty(
+                    $validated[
+                        'total_marks'
+                    ]
+                )
+                && $penaltyValue >
+                    (float) $validated[
+                        'total_marks'
+                    ]
+            ) {
+                throw ValidationException::withMessages([
+                    'late_penalty_value' =>
+                        'A fixed late penalty cannot exceed the assignment total marks.',
+                ]);
+            }
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
         | Page Range Validation Against Book
         |--------------------------------------------------------------------------
         |
         | Laravel validation ensures start_page <= end_page.
         |
-        | Here we additionally ensure the selected pages do not exceed
-        | the known page count of the assigned book.
+        | Here we additionally ensure the selected pages do not exceed the known
+        | page count of the actively licensed, assignable book.
         |
         */
 

@@ -616,14 +616,14 @@ private function createSchools(): array
         */
 
         $users['teacherOne']
-            ->teachingClasses()
+            ->teacherClasses()
             ->syncWithoutDetaching([
                 $formOne->id,
                 $formTwo->id,
             ]);
 
         $users['teacherTwo']
-            ->teachingClasses()
+            ->teacherClasses()
             ->syncWithoutDetaching([
                 $formOne->id,
             ]);
@@ -755,7 +755,7 @@ private function createSchools(): array
                 );
 
         $users['teacher']
-            ->teachingClasses()
+            ->teacherClasses()
             ->syncWithoutDetaching([
                 $formOne->id,
             ]);

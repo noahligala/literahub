@@ -17,7 +17,7 @@
             'class_ids',
             $editing
                 ? $teacher
-                    ->teachingClasses
+                    ->teacherClasses
                     ->pluck('id')
                     ->all()
                 : []

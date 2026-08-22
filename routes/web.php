@@ -18,6 +18,7 @@ use App\Http\Controllers\School\LibraryController;
 use App\Http\Controllers\School\StreamController;
 use App\Http\Controllers\School\StudentController;
 use App\Http\Controllers\School\TeacherController;
+use App\Http\Controllers\Student\AssignmentController as StudentAssignmentController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -302,7 +303,9 @@ Route::middleware([
         Route::resource(
             'book-licenses',
             BookLicenseController::class
-        )->except([
+        ) ->parameters([
+                'book-licenses' => 'bookLicense',
+            ])->except([
             'destroy',
         ]);
 
@@ -536,6 +539,32 @@ Route::middleware([
 
 /*
 |--------------------------------------------------------------------------
+| Shared School Assignment Management
+|--------------------------------------------------------------------------
+|
+| School administrators and teachers use the same assignment workflow.
+| AssignmentController must enforce teacher scoping so teachers can only
+| create/manage assignments for their own teaching classes.
+|
+*/
+
+Route::middleware([
+    'auth',
+    'role:school_admin|teacher',
+])
+    ->prefix('school')
+    ->name('school.')
+    ->group(function () {
+
+        Route::resource(
+            'assignments',
+            AssignmentController::class
+        );
+    });
+
+
+/*
+|--------------------------------------------------------------------------
 | School Administrator
 |--------------------------------------------------------------------------
 */
@@ -745,18 +774,6 @@ Route::middleware([
 
         /*
         |--------------------------------------------------------------------------
-        | Assignments
-        |--------------------------------------------------------------------------
-        */
-
-        Route::resource(
-            'assignments',
-            AssignmentController::class
-        );
-
-
-        /*
-        |--------------------------------------------------------------------------
         | Subscription
         |--------------------------------------------------------------------------
         */
@@ -912,9 +929,13 @@ Route::middleware([
         );
 
 
-        Route::view(
+        /*
+         * Teacher assignment management uses the shared school assignment
+         * controller workflow at /school/assignments.
+         */
+        Route::redirect(
             '/assignments',
-            'teacher.assignments.index'
+            '/school/assignments'
         )->name(
             'assignments.index'
         );
@@ -1022,4 +1043,80 @@ Route::middleware([
         )->name(
             'profile'
         );
+
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Student Assignment Routes
+|--------------------------------------------------------------------------
+|
+| These routes intentionally live outside the /library route group.
+|
+| URLs:
+|   /student/assignments
+|   /student/assignments/{assignment}
+|
+| Route names:
+|   student.assignments.index
+|   student.assignments.show
+|   student.assignments.draft
+|   student.assignments.submit
+|
+*/
+
+Route::middleware([
+    'auth',
+    'role:student',
+])
+    ->prefix('student/assignments')
+    ->name('student.assignments.')
+    ->group(function () {
+
+        Route::get(
+            '/',
+            [
+                StudentAssignmentController::class,
+                'index',
+            ]
+        )->name(
+            'index'
+        );
+
+
+        Route::get(
+            '/{assignment}',
+            [
+                StudentAssignmentController::class,
+                'show',
+            ]
+        )->name(
+            'show'
+        );
+
+
+        Route::put(
+            '/{assignment}/draft',
+            [
+                StudentAssignmentController::class,
+                'saveDraft',
+            ]
+        )
+            ->middleware('throttle:60,1')
+            ->name(
+                'draft'
+            );
+
+
+        Route::post(
+            '/{assignment}/submit',
+            [
+                StudentAssignmentController::class,
+                'submit',
+            ]
+        )
+            ->middleware('throttle:20,1')
+            ->name(
+                'submit'
+            );
     });

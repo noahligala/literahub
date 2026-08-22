@@ -1,16 +1,91 @@
 <x-layouts.dashboard title="Teacher Dashboard — LiteraHub">
 
     @php
+
         $user = auth()->user();
 
         $school = $user
-            ->schools()
-            ->wherePivot('status', 'active')
+            ->activeSchools()
             ->first();
 
-        $classes = method_exists($user, 'teacherClasses')
-            ? $user->teacherClasses()->count()
+
+        $classes = $school
+            ? $user
+                ->teacherClasses()
+                ->where(
+                    'school_classes.school_id',
+                    $school->id
+                )
+                ->count()
             : 0;
+
+
+        $assignmentQuery = $school
+            ? \App\Models\Assignment::query()
+                ->where(
+                    'school_id',
+                    $school->id
+                )
+                ->where(
+                    'creator_id',
+                    $user->id
+                )
+            : null;
+
+
+        $assignments = $assignmentQuery
+            ? (clone $assignmentQuery)
+                ->whereIn(
+                    'status',
+                    [
+                        'draft',
+                        'published',
+                        'closed',
+                    ]
+                )
+                ->count()
+            : 0;
+
+
+        $publishedAssignments = $assignmentQuery
+            ? (clone $assignmentQuery)
+                ->where(
+                    'status',
+                    'published'
+                )
+                ->count()
+            : 0;
+
+
+        $pendingReviews = $school
+            ? \App\Models\AssignmentSubmission::query()
+                ->whereHas(
+                    'assignment',
+                    function ($query) use (
+                        $school,
+                        $user
+                    ) {
+                        $query
+                            ->where(
+                                'school_id',
+                                $school->id
+                            )
+                            ->where(
+                                'creator_id',
+                                $user->id
+                            );
+                    }
+                )
+                ->whereIn(
+                    'status',
+                    [
+                        'submitted',
+                        'late',
+                    ]
+                )
+                ->count()
+            : 0;
+
     @endphp
 
 
@@ -18,7 +93,7 @@
 
 
         {{-- ================================================================
-             HEADER
+            Header
         ================================================================= --}}
 
         <div class="page-header">
@@ -34,6 +109,7 @@
                 </h1>
 
                 <p>
+
                     @if ($school)
 
                         {{ $school->name }}
@@ -43,6 +119,7 @@
                         Your teaching workspace
 
                     @endif
+
                 </p>
 
             </div>
@@ -51,37 +128,35 @@
             <div class="page-header__actions">
 
                 <a
-                    href="{{ route('school.library.index') }}"
+                    href="{{ route(
+                        'school.library.index'
+                    ) }}"
                     class="btn btn--secondary"
                 >
                     Browse Library
                 </a>
 
 
-                @if (Route::has('teacher.assignments.create'))
-
-                    <a
-                        href="{{ route(
-                            'teacher.assignments.create'
-                        ) }}"
-                        class="btn btn--primary"
-                    >
-                        Create Assignment
-                    </a>
-
-                @endif
+                <a
+                    href="{{ route(
+                        'school.assignments.create'
+                    ) }}"
+                    class="btn btn--primary"
+                >
+                    Create Assignment
+                </a>
 
             </div>
 
         </div>
 
 
-
         {{-- ================================================================
-             QUICK SUMMARY
+            Summary
         ================================================================= --}}
 
         <section class="teacher-stats">
+
 
             <article class="teacher-stat">
 
@@ -103,15 +178,15 @@
             <article class="teacher-stat">
 
                 <span>
-                    Library
+                    Assignments
                 </span>
 
                 <strong>
-                    Ready
+                    {{ $assignments }}
                 </strong>
 
                 <small>
-                    Licensed institutional books
+                    Assignments created by you
                 </small>
 
             </article>
@@ -120,16 +195,15 @@
             <article class="teacher-stat">
 
                 <span>
-                    Assignments
+                    Published
                 </span>
 
                 <strong>
-                    —
-
+                    {{ $publishedAssignments }}
                 </strong>
 
                 <small>
-                    Published and active
+                    Active learner tasks
                 </small>
 
             </article>
@@ -142,11 +216,11 @@
                 </span>
 
                 <strong>
-                    —
+                    {{ $pendingReviews }}
                 </strong>
 
                 <small>
-                    Student submissions
+                    Student work awaiting grading
                 </small>
 
             </article>
@@ -154,9 +228,8 @@
         </section>
 
 
-
         {{-- ================================================================
-             PRIMARY WORKFLOWS
+            Academic Workspace
         ================================================================= --}}
 
         <section class="teacher-section">
@@ -196,14 +269,18 @@
                         </h3>
 
                         <p>
-                            View the classes and learner groups
-                            assigned to you.
+                            View the classes and learner
+                            groups assigned to you.
                         </p>
 
                     </div>
 
 
-                    @if (Route::has('teacher.classes.index'))
+                    @if (
+                        Route::has(
+                            'teacher.classes.index'
+                        )
+                    )
 
                         <a
                             href="{{ route(
@@ -212,19 +289,21 @@
                             class="teacher-card__link"
                         >
                             View Classes
-                            <span>→</span>
+
+                            <span>
+                                →
+                            </span>
                         </a>
 
                     @else
 
                         <span class="teacher-card__disabled">
-                            Coming next
+                            Class view coming next
                         </span>
 
                     @endif
 
                 </article>
-
 
 
                 {{-- Library --}}
@@ -242,8 +321,9 @@
                         </h3>
 
                         <p>
-                            Browse books licensed to your institution
-                            and available for teaching.
+                            Browse books actively licensed
+                            to your institution and available
+                            for teaching.
                         </p>
 
                     </div>
@@ -256,11 +336,13 @@
                         class="teacher-card__link"
                     >
                         Browse Library
-                        <span>→</span>
+
+                        <span>
+                            →
+                        </span>
                     </a>
 
                 </article>
-
 
 
                 {{-- Assignments --}}
@@ -278,84 +360,69 @@
                         </h3>
 
                         <p>
-                            Create literature assignments,
-                            reading tasks and assessments.
+                            Create reading tasks using
+                            licensed books, reading ranges,
+                            deadlines and marks.
                         </p>
 
                     </div>
 
 
-                    @if (Route::has('teacher.assignments.index'))
+                    <a
+                        href="{{ route(
+                            'school.assignments.index'
+                        ) }}"
+                        class="teacher-card__link"
+                    >
+                        Manage Assignments
 
-                        <a
-                            href="{{ route(
-                                'teacher.assignments.index'
-                            ) }}"
-                            class="teacher-card__link"
-                        >
-                            Manage Assignments
-                            <span>→</span>
-                        </a>
-
-                    @else
-
-                        <span class="teacher-card__disabled">
-                            Coming next
+                        <span>
+                            →
                         </span>
-
-                    @endif
+                    </a>
 
                 </article>
 
 
-
-                {{-- Reading Lists --}}
+                {{-- New Assignment --}}
 
                 <article class="teacher-card">
 
                     <div class="teacher-card__icon">
-                        R
+                        +
                     </div>
 
                     <div class="teacher-card__body">
 
                         <h3>
-                            Reading Lists
+                            New Assignment
                         </h3>
 
                         <p>
-                            Organise licensed books into structured
-                            reading lists for your classes.
+                            Assign a licensed book to one
+                            of your teaching classes.
                         </p>
 
                     </div>
 
 
-                    @if (Route::has('teacher.reading-lists.index'))
+                    <a
+                        href="{{ route(
+                            'school.assignments.create'
+                        ) }}"
+                        class="teacher-card__link"
+                    >
+                        Create Assignment
 
-                        <a
-                            href="{{ route(
-                                'teacher.reading-lists.index'
-                            ) }}"
-                            class="teacher-card__link"
-                        >
-                            Reading Lists
-                            <span>→</span>
-                        </a>
-
-                    @else
-
-                        <span class="teacher-card__disabled">
-                            Later MVP
+                        <span>
+                            →
                         </span>
-
-                    @endif
+                    </a>
 
                 </article>
 
 
-
-                {{-- Students --}}
+                {{-- Submissions --}}
 
                 <article class="teacher-card">
 
@@ -366,18 +433,84 @@
                     <div class="teacher-card__body">
 
                         <h3>
-                            Students
+                            Student Submissions
                         </h3>
 
                         <p>
-                            Review learners, reading activity and
-                            assignment participation.
+                            Review submitted learner work,
+                            late submissions, scores and feedback.
                         </p>
 
                     </div>
 
 
-                    @if (Route::has('teacher.students.index'))
+                    @if (
+                        Route::has(
+                            'teacher.submissions.index'
+                        )
+                    )
+
+                        <a
+                            href="{{ route(
+                                'teacher.submissions.index'
+                            ) }}"
+                            class="teacher-card__link"
+                        >
+                            Review Submissions
+
+                            <span>
+                                →
+                            </span>
+                        </a>
+
+                    @else
+
+                        <a
+                            href="{{ route(
+                                'school.assignments.index'
+                            ) }}"
+                            class="teacher-card__link"
+                        >
+                            Open Assignments
+
+                            <span>
+                                →
+                            </span>
+                        </a>
+
+                    @endif
+
+                </article>
+
+
+                {{-- Students --}}
+
+                <article class="teacher-card">
+
+                    <div class="teacher-card__icon">
+                        U
+                    </div>
+
+                    <div class="teacher-card__body">
+
+                        <h3>
+                            Students
+                        </h3>
+
+                        <p>
+                            Review learners in your classes,
+                            their assignment participation
+                            and reading activity.
+                        </p>
+
+                    </div>
+
+
+                    @if (
+                        Route::has(
+                            'teacher.students.index'
+                        )
+                    )
 
                         <a
                             href="{{ route(
@@ -386,74 +519,29 @@
                             class="teacher-card__link"
                         >
                             View Students
-                            <span>→</span>
+
+                            <span>
+                                →
+                            </span>
                         </a>
 
                     @else
 
                         <span class="teacher-card__disabled">
-                            Coming soon
+                            Student overview coming next
                         </span>
 
                     @endif
 
                 </article>
-
-
-
-                {{-- Performance --}}
-
-                <article class="teacher-card">
-
-                    <div class="teacher-card__icon">
-                        P
-                    </div>
-
-                    <div class="teacher-card__body">
-
-                        <h3>
-                            Performance
-                        </h3>
-
-                        <p>
-                            Review assignment results and
-                            learner reading progress.
-                        </p>
-
-                    </div>
-
-
-                    @if (Route::has('teacher.performance.index'))
-
-                        <a
-                            href="{{ route(
-                                'teacher.performance.index'
-                            ) }}"
-                            class="teacher-card__link"
-                        >
-                            View Performance
-                            <span>→</span>
-                        </a>
-
-                    @else
-
-                        <span class="teacher-card__disabled">
-                            Later MVP
-                        </span>
-
-                    @endif
-
-                </article>
-
 
             </div>
 
         </section>
 
 
-
         {{-- ================================================================
-             NEXT ACTIONS
+            Workflow
         ================================================================= --}}
 
         <section class="teacher-section">
@@ -467,7 +555,7 @@
                     </span>
 
                     <h2>
-                        Start Teaching
+                        Assignment Cycle
                     </h2>
 
                 </div>
@@ -476,6 +564,7 @@
 
 
             <div class="teacher-workflow">
+
 
                 <div class="workflow-step">
 
@@ -486,11 +575,12 @@
                     <div>
 
                         <strong>
-                            Browse the library
+                            Choose a licensed book
                         </strong>
 
                         <p>
-                            Find a book licensed to your school.
+                            Browse resources permitted for
+                            teacher assignment.
                         </p>
 
                     </div>
@@ -507,12 +597,12 @@
                     <div>
 
                         <strong>
-                            Select a class
+                            Select your class
                         </strong>
 
                         <p>
-                            Choose which learners should receive
-                            the reading task.
+                            Assign the work only to classes
+                            you currently teach.
                         </p>
 
                     </div>
@@ -529,12 +619,12 @@
                     <div>
 
                         <strong>
-                            Create an assignment
+                            Publish assignment
                         </strong>
 
                         <p>
-                            Add instructions, reading pages and
-                            a submission deadline.
+                            Add reading pages, instructions,
+                            marks and the deadline.
                         </p>
 
                     </div>
@@ -551,11 +641,12 @@
                     <div>
 
                         <strong>
-                            Review submissions
+                            Grade submissions
                         </strong>
 
                         <p>
-                            Grade student work and provide feedback.
+                            Review student work, award marks
+                            and provide feedback.
                         </p>
 
                     </div>
@@ -566,9 +657,7 @@
 
         </section>
 
-
     </div>
-
 
 
     <style>
@@ -579,12 +668,6 @@
         }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Header
-        |--------------------------------------------------------------------------
-        */
-
         .page-header {
             display: flex;
             align-items: flex-start;
@@ -594,14 +677,16 @@
 
 
         .page-header h1 {
-            margin:
-                4px 0;
+            margin: 4px 0;
         }
 
 
         .page-header p {
             margin: 0;
-            color: var(--color-text-muted);
+
+            color:
+                var(--color-text-muted);
+
             font-size: .62rem;
         }
 
@@ -613,20 +698,16 @@
         }
 
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Stats
-        |--------------------------------------------------------------------------
-        */
-
         .teacher-stats {
             display: grid;
 
             grid-template-columns:
                 repeat(
                     4,
-                    minmax(0, 1fr)
+                    minmax(
+                        0,
+                        1fr
+                    )
                 );
 
             gap: 10px;
@@ -654,31 +735,23 @@
             color:
                 var(--color-text-muted);
 
-            font-size:
-                .52rem;
+            font-size: .52rem;
+            font-weight: 700;
 
-            font-weight:
-                700;
-
-            text-transform:
-                uppercase;
-
-            letter-spacing:
-                .05em;
+            text-transform: uppercase;
+            letter-spacing: .05em;
         }
 
 
         .teacher-stat strong {
             display: block;
 
-            margin:
-                6px 0 3px;
+            margin: 6px 0 3px;
 
             color:
                 var(--color-text);
 
-            font-size:
-                1.35rem;
+            font-size: 1.35rem;
         }
 
 
@@ -686,17 +759,9 @@
             color:
                 var(--color-text-muted);
 
-            font-size:
-                .51rem;
+            font-size: .51rem;
         }
 
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Sections
-        |--------------------------------------------------------------------------
-        */
 
         .teacher-section {
             display: grid;
@@ -712,20 +777,10 @@
 
 
         .section-heading h2 {
-            margin:
-                3px 0 0;
-
-            font-size:
-                .88rem;
+            margin: 3px 0 0;
+            font-size: .88rem;
         }
 
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Cards
-        |--------------------------------------------------------------------------
-        */
 
         .teacher-grid {
             display: grid;
@@ -733,7 +788,10 @@
             grid-template-columns:
                 repeat(
                     3,
-                    minmax(0, 1fr)
+                    minmax(
+                        0,
+                        1fr
+                    )
                 );
 
             gap: 12px;
@@ -744,11 +802,8 @@
             display: flex;
             flex-direction: column;
 
-            min-height:
-                190px;
-
-            padding:
-                15px;
+            min-height: 190px;
+            padding: 15px;
 
             border:
                 1px solid
@@ -761,10 +816,8 @@
                 var(--color-surface);
 
             transition:
-                border-color
-                .15s ease,
-                transform
-                .15s ease;
+                border-color .15s ease,
+                transform .15s ease;
         }
 
 
@@ -778,20 +831,12 @@
 
 
         .teacher-card__icon {
-            width:
-                32px;
+            width: 32px;
+            height: 32px;
 
-            height:
-                32px;
-
-            display:
-                inline-flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
 
             border-radius:
                 var(--radius-md);
@@ -802,11 +847,8 @@
             color:
                 var(--color-primary);
 
-            font-size:
-                .68rem;
-
-            font-weight:
-                850;
+            font-size: .68rem;
+            font-weight: 850;
         }
 
 
@@ -816,11 +858,8 @@
 
 
         .teacher-card h3 {
-            margin:
-                13px 0 4px;
-
-            font-size:
-                .74rem;
+            margin: 13px 0 4px;
+            font-size: .74rem;
         }
 
 
@@ -830,11 +869,8 @@
             color:
                 var(--color-text-muted);
 
-            font-size:
-                .55rem;
-
-            line-height:
-                1.6;
+            font-size: .55rem;
+            line-height: 1.6;
         }
 
 
@@ -843,11 +879,8 @@
             align-items: center;
             justify-content: space-between;
 
-            margin-top:
-                16px;
-
-            padding-top:
-                10px;
+            margin-top: 16px;
+            padding-top: 10px;
 
             border-top:
                 1px solid
@@ -856,23 +889,16 @@
             color:
                 var(--color-primary);
 
-            font-size:
-                .54rem;
+            font-size: .54rem;
+            font-weight: 750;
 
-            font-weight:
-                750;
-
-            text-decoration:
-                none;
+            text-decoration: none;
         }
 
 
         .teacher-card__disabled {
-            margin-top:
-                16px;
-
-            padding-top:
-                10px;
+            margin-top: 16px;
+            padding-top: 10px;
 
             border-top:
                 1px solid
@@ -881,20 +907,10 @@
             color:
                 var(--color-text-muted);
 
-            font-size:
-                .51rem;
-
-            font-weight:
-                650;
+            font-size: .51rem;
+            font-weight: 650;
         }
 
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Workflow
-        |--------------------------------------------------------------------------
-        */
 
         .teacher-workflow {
             display: grid;
@@ -902,7 +918,10 @@
             grid-template-columns:
                 repeat(
                     4,
-                    minmax(0, 1fr)
+                    minmax(
+                        0,
+                        1fr
+                    )
                 );
 
             gap: 10px;
@@ -914,8 +933,7 @@
             align-items: flex-start;
             gap: 10px;
 
-            padding:
-                14px;
+            padding: 14px;
 
             border:
                 1px solid
@@ -930,39 +948,26 @@
 
 
         .workflow-step > span {
-            width:
-                25px;
-
-            height:
-                25px;
+            width: 25px;
+            height: 25px;
 
             flex:
                 0 0
                 25px;
 
-            display:
-                inline-flex;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
 
-            align-items:
-                center;
-
-            justify-content:
-                center;
-
-            border-radius:
-                50%;
+            border-radius: 50%;
 
             background:
                 var(--color-primary);
 
-            color:
-                white;
+            color: white;
 
-            font-size:
-                .52rem;
-
-            font-weight:
-                800;
+            font-size: .52rem;
+            font-weight: 800;
         }
 
 
@@ -972,32 +977,20 @@
             color:
                 var(--color-text);
 
-            font-size:
-                .58rem;
+            font-size: .58rem;
         }
 
 
         .workflow-step p {
-            margin:
-                3px 0 0;
+            margin: 3px 0 0;
 
             color:
                 var(--color-text-muted);
 
-            font-size:
-                .51rem;
-
-            line-height:
-                1.5;
+            font-size: .51rem;
+            line-height: 1.5;
         }
 
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Responsive
-        |--------------------------------------------------------------------------
-        */
 
         @media (
             max-width: 1000px
@@ -1008,7 +1001,10 @@
                 grid-template-columns:
                     repeat(
                         2,
-                        minmax(0, 1fr)
+                        minmax(
+                            0,
+                            1fr
+                        )
                     );
             }
 
@@ -1017,7 +1013,10 @@
                 grid-template-columns:
                     repeat(
                         2,
-                        minmax(0, 1fr)
+                        minmax(
+                            0,
+                            1fr
+                        )
                     );
             }
 
