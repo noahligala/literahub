@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Assignment extends Model
 {
@@ -34,20 +35,12 @@ class Assignment extends Model
     protected function casts(): array
     {
         return [
-            'starts_at' =>
-                'datetime',
+            'starts_at' => 'datetime',
+            'due_at' => 'datetime',
 
-            'due_at' =>
-                'datetime',
-
-            'start_page' =>
-                'integer',
-
-            'end_page' =>
-                'integer',
-
-            'total_marks' =>
-                'integer',
+            'start_page' => 'integer',
+            'end_page' => 'integer',
+            'total_marks' => 'integer',
         ];
     }
 
@@ -73,17 +66,6 @@ class Assignment extends Model
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Assigned Book
-    |--------------------------------------------------------------------------
-    |
-    | resource_id currently stores the Book ID.
-    |
-    | Later we can rename the database column to book_id.
-    |
-    */
-
     public function book(): BelongsTo
     {
         return $this->belongsTo(
@@ -107,16 +89,21 @@ class Assignment extends Model
             ->withTimestamps();
     }
 
+    public function submissions(): HasMany
+    {
+        return $this->hasMany(
+            AssignmentSubmission::class
+        );
+    }
+
     public function isPublished(): bool
     {
-        return $this->status
-            === 'published';
+        return $this->status === 'published';
     }
 
     public function isClosed(): bool
     {
-        return $this->status
-            === 'closed';
+        return $this->status === 'closed';
     }
 
     public function isOverdue(): bool
@@ -125,5 +112,20 @@ class Assignment extends Model
             && now()->greaterThan(
                 $this->due_at
             );
+    }
+
+    public function hasStarted(): bool
+    {
+        return ! $this->starts_at
+            || now()->greaterThanOrEqualTo(
+                $this->starts_at
+            );
+    }
+
+    public function acceptsSubmissions(): bool
+    {
+        return $this->isPublished()
+            && ! $this->isClosed()
+            && $this->hasStarted();
     }
 }

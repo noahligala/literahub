@@ -190,4 +190,20 @@ class User extends Authenticatable
             SecurityEvent::class
         );
     }
+
+    public function assignmentSubmissions(): HasMany
+    {
+        return $this->hasMany(
+            AssignmentSubmission::class,
+            'student_id'
+        );
+    }
+
+    public function gradedAssignmentSubmissions(): HasMany
+    {
+        return $this->hasMany(
+            AssignmentSubmission::class,
+            'graded_by'
+        );
+    }
 }
